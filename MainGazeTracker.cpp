@@ -9,6 +9,7 @@
 #include "GazeTracker.h"
 #include "HeadTracker.h"
 #include "EyeCenterDetector.h"
+#include "FacePoseEstimator.h"
 #include "HistogramFeatureExtractor.h"
 #include "PointTrackerWithTemplate.h"
 #include "GazeTrackerHistogramFeatures.h"
@@ -238,11 +239,12 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
     addComponent("AnchorPointSelector", new AnchorPointSelector());
     addComponent("EyeCenterDetector", new EyeCenterDetector());
     addComponent("EyeExtractor", new EyeExtractor());
+    addComponent("FacePoseEstimator", new FacePoseEstimator());
     addComponent("HeadTracker", new HeadTracker());
     addComponent("HistogramFeatureExtractor", new HistogramFeatureExtractor());
     addComponent("PointTracker", new PointTracker());
     addComponent("PointTrackerWithTemplate", new PointTrackerWithTemplate());
-    
+        
     _eyeExtractor = (EyeExtractor*) getComponent("EyeExtractor");
     
     // Gaze estimation components

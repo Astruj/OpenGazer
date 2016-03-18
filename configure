@@ -1,6 +1,15 @@
 #!/bin/bash
 UNAME=$(uname)
 
+# If the face shape predictor data does not exist, download and unzip it
+if [ ! -f ./data/shape_predictor_68_face_landmarks.dat ]; then
+    echo "Downloading the pre-trained face landmark detector..."
+    curl -o ./data/shape_predictor_68_face_landmarks.dat.bz2 http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
+    bzip2 -d ./data/shape_predictor_68_face_landmarks.dat.bz2
+    echo "Done!"
+fi
+
+
 if [ $UNAME = "Linux" ]; then
 	qmake opengazer.pro
 fi

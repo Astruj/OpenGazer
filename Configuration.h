@@ -10,8 +10,8 @@ public:
     std::vector<std::string> gaze_components;
     std::vector<std::string> post_components;
     
-    Configuration() {};
-    ~Configuration() {};
+    Configuration() {}
+    ~Configuration() {}
     
     void load(const std::string &filename);
 };

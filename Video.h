@@ -9,6 +9,8 @@ private:
 	
 	void prepareDebugFrame();
 	void copyToDebugFrame();
+	void prepareReducedSizeFrame();
+	void copyToReducedSizeFrame();
 	
 public:
 	int frameCount;
@@ -16,6 +18,7 @@ public:
 	cv::Mat frame;
 	cv::Mat frameGrey;
 	cv::Mat debugFrame;
+    cv::Mat reducedSizeFrame;
 	cv::Size size;
 	bool captureFromVideo;
 	std::string resolutionParameter;

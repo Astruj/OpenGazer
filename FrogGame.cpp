@@ -9,15 +9,15 @@ FrogGame::FrogGame():
 	_window(1, false)
 {
 	// Read the source images for background (clutter) and frog
-	_clutter = cv::imread("./background_full.png", CV_LOAD_IMAGE_COLOR);
+    _clutter = cv::imread("./images/background_full.png", CV_LOAD_IMAGE_COLOR);
 	cvtColor(_clutter, _clutter, CV_RGB2BGR);
 
-	_frog = cv::imread("./frog.png", CV_LOAD_IMAGE_COLOR);
+    _frog = cv::imread("./images/frog.png", CV_LOAD_IMAGE_COLOR);
 	cvtColor(_frog, _frog, CV_RGB2BGR);
 
 	// Read the mask images and convert the gaussian mask to float type
-	_frogMask = cv::imread("./frog-mask.png", CV_LOAD_IMAGE_COLOR);
-	cv::Mat maskImage = cv::imread("./gaussian-mask.png", CV_LOAD_IMAGE_COLOR);
+    _frogMask = cv::imread("./images/frog-mask.png", CV_LOAD_IMAGE_COLOR);
+    cv::Mat maskImage = cv::imread("./images/gaussian-mask.png", CV_LOAD_IMAGE_COLOR);
 	maskImage.convertTo(_gaussianMask, CV_32FC3);
 	_gaussianMask = _gaussianMask/255.0;
 	

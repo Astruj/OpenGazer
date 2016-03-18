@@ -4,8 +4,8 @@
 
 class Component {
 public:
-    Component() {};
-    ~Component() {};
+    Component() {}
+    ~Component() {}
     
     // Returns whether component is active
     bool isActive() {
@@ -21,8 +21,8 @@ public:
 
 class GazeTrackerComponent: public Component {
 public:
-    GazeTrackerComponent() {};
-    ~GazeTrackerComponent() {};
+    GazeTrackerComponent() {}
+    ~GazeTrackerComponent() {}
     
     Point gazePoint;
     

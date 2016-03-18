@@ -16,7 +16,7 @@ Calibrator::Calibrator(const std::vector<Point> &points) :
 	needRecalibration = false;
 	
 	_screenImage.create(cv::Size(_window.size().width(), _window.size().height()), CV_8UC3);
-	_targetImage = cv::imread("./target.png", CV_LOAD_IMAGE_COLOR);
+    _targetImage = cv::imread("./images/target.png", CV_LOAD_IMAGE_COLOR);
 	_window.setWindowTitle("Opengazer");
 }
 

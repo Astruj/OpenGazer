@@ -1,5 +1,6 @@
 outputs/*.txt_
 outputs/*.txt
+data/shape_predictor_68_face_landmarks.dat
 opengazer.app/*
 opengazer
 moc_*.cpp

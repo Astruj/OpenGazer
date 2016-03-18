@@ -4,6 +4,7 @@
 #include "FeatureDetector.h"
 #include "Component.h"
 #include "PointTracker.h"
+#include "FacePoseEstimator.h"
 
 class EyeExtractor: public Component {
 public:
@@ -36,6 +37,7 @@ private:
 	bool _isBlinking;
 	bool _fromGroundTruth;
     PointTracker *_pointTracker = NULL;
+    FacePoseEstimator *_facePoseEstimator = NULL;
 
 	void extractEye(const cv::Mat originalImage);
 	void extractEyeLeft(const cv::Mat originalImage);

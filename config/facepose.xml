@@ -1,0 +1,15 @@
+<components>
+    <!-- Components for preprocessing before calculating the gaze -->
+    <pre>
+        <component>FacePoseEstimator</component>
+        <component>EyeExtractor</component>
+    </pre>
+    <!-- Gaze estimation components -->
+    <gaze>
+        <component>GazeTracker</component>
+    </gaze>
+    <!-- Components using gaze estimation -->
+    <post>
+        <component>FrogGame</component>
+    </post>
+</components>

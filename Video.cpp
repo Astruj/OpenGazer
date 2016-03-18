@@ -22,6 +22,7 @@ VideoInput::VideoInput():
 	flip(frame, frame, 1);
 	
 	prepareDebugFrame();
+    prepareReducedSizeFrame();
 }
 
 VideoInput::VideoInput(std::string resolution):
@@ -53,6 +54,7 @@ VideoInput::VideoInput(std::string resolution):
 	flip(frame, frame, 1);
 
 	prepareDebugFrame();
+    prepareReducedSizeFrame();
 	cvtColor(frame, frameGrey, CV_BGR2GRAY);
 }
 
@@ -107,6 +109,7 @@ VideoInput::VideoInput(std::string resolution, std::string filename, bool dummy)
 	}
 	
 	prepareDebugFrame();
+    prepareReducedSizeFrame();
 	cvtColor(frame, frameGrey, CV_BGR2GRAY);
 }
 
@@ -164,6 +167,7 @@ void VideoInput::updateFrame() {
 	}
 	
 	copyToDebugFrame();
+    copyToReducedSizeFrame();
 	cvtColor(frame, frameGrey, CV_BGR2GRAY);
 }
 
@@ -190,8 +194,18 @@ void VideoInput::prepareDebugFrame() {
 	copyToDebugFrame();
 }
 
+void VideoInput::prepareReducedSizeFrame() {
+	reducedSizeFrame.create(cv::Size(size.width/2, size.height/2), CV_8UC3);
+	
+	copyToReducedSizeFrame();
+}
+
 void VideoInput::copyToDebugFrame() {
 	cv::resize(frame, debugFrame, debugFrame.size());
+}
+
+void VideoInput::copyToReducedSizeFrame() {
+	cv::resize(frame, reducedSizeFrame, reducedSizeFrame.size());
 }
 
 // Returns 480 or 720 depending on camera resolution

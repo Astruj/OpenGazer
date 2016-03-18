@@ -79,10 +79,10 @@ void AnchorPointSelector::choosePoints() {
 }
 
 void AnchorPointSelector::loadCascades() {
-	if(/*!faceCascade.load("haarcascade_frontalface_alt.xml") || */
-		!eyeCascade.load("DetectorEyes.xml") ||
-		!noseCascade.load("DetectorNose2.xml") ||
-		!mouthCascade.load("DetectorMouth.xml")) {
+    if(/*!faceCascade.load("./data/haarcascade_frontalface_alt.xml") || */
+        !eyeCascade.load("./data/DetectorEyes.xml") ||
+        !noseCascade.load("./data/DetectorNose2.xml") ||
+        !mouthCascade.load("./data/DetectorMouth.xml")) {
         std::cout << "ERROR: Could not load cascade classifiers!" << std::endl;
 		exit(1);
 	}

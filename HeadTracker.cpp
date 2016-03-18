@@ -236,10 +236,7 @@ std::vector<bool> HeadTracker::detectInliers(std::vector<Point> const &prev, std
 }
 
 void HeadTracker::predictPoints(double xx0, double yy0, double xx1, double yy1, double rotX, double rotY, double atX, double atY) {
-	double maxDiff = 0.0;
-	int diffIndex = -1;
-
-	std::vector<Point> points = _pointTracker->getPoints(&PointTracker::origPoints, true);
+    std::vector<Point> points = _pointTracker->getPoints(&PointTracker::origPoints, true);
 
 	for (int i = 0; i < points.size(); i++) {
 		Point p(points[i].x - xx0, points[i].y - yy0);

@@ -32,10 +32,12 @@ EyeExtractor::~EyeExtractor() {}
 void EyeExtractor::process() {
     static int imageNo = 1;
 
+    // Initialize components
     if(_pointTracker == NULL) {
         _pointTracker = (PointTracker*) Application::getComponent("PointTracker");
+        _facePoseEstimator = (FacePoseEstimator*) Application::getComponent("FacePoseEstimator");
     }
-    
+
     if(Application::Signals::initiateCalibrationFrameNo == Application::Components::videoInput->frameCount) {
 		start();
 	}
@@ -95,10 +97,24 @@ bool EyeExtractor::isBlinking() {
 }
 
 void EyeExtractor::extractEye(const cv::Mat originalImage) {
-	double x0 = _pointTracker->currentPoints[PointTracker::eyePoint1].x;
-	double y0 = _pointTracker->currentPoints[PointTracker::eyePoint1].y;
-	double x1 = _pointTracker->currentPoints[PointTracker::eyePoint2].x;
-	double y1 = _pointTracker->currentPoints[PointTracker::eyePoint2].y;
+    double x0 = 0;
+    double y0 = 0;
+    double x1 = 0;
+    double y1 = 0;
+
+    if(_facePoseEstimator->isActive()) {
+        std::cout << "Trying to get from face pose estimator" << std::endl;
+        x0 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
+        y0 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
+        x1 = _facePoseEstimator->facialLandmarks[LEFT_EYE].x;
+        y1 = _facePoseEstimator->facialLandmarks[LEFT_EYE].y;
+    }
+    else {
+        x0 = _pointTracker->currentPoints[PointTracker::eyePoint1].x;
+        y0 = _pointTracker->currentPoints[PointTracker::eyePoint1].y;
+        x1 = _pointTracker->currentPoints[PointTracker::eyePoint2].x;
+        y1 = _pointTracker->currentPoints[PointTracker::eyePoint2].y;
+    }
 
 	// Move the tracked points a little towards center (using weighted sum)
 	// so that the extracted image contains more the important area (iris & sclera)
@@ -157,10 +173,23 @@ void EyeExtractor::extractEye(const cv::Mat originalImage) {
 }
 
 void EyeExtractor::extractEyeLeft(const cv::Mat originalImage) {
-	double x0 = _pointTracker->currentPoints[PointTracker::eyePoint2].x;
-	double y0 = _pointTracker->currentPoints[PointTracker::eyePoint2].y;
-	double x1 = _pointTracker->currentPoints[PointTracker::eyePoint1].x;
-	double y1 = _pointTracker->currentPoints[PointTracker::eyePoint1].y;
+    double x0 = 0;
+    double y0 = 0;
+    double x1 = 0;
+    double y1 = 0;
+
+    if(_facePoseEstimator->isActive()) {
+        x0 = _facePoseEstimator->facialLandmarks[LEFT_EYE].x;
+        y0 = _facePoseEstimator->facialLandmarks[LEFT_EYE].y;
+        x1 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
+        y1 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
+    }
+    else {
+        x0 = _pointTracker->currentPoints[PointTracker::eyePoint2].x;
+        y0 = _pointTracker->currentPoints[PointTracker::eyePoint2].y;
+        x1 = _pointTracker->currentPoints[PointTracker::eyePoint1].x;
+        y1 = _pointTracker->currentPoints[PointTracker::eyePoint1].y;
+    }
 
 	// Move the tracked points a little towards center (using weighted sum)
 	// so that the extracted image contains more the important area (iris & sclera)
@@ -219,7 +248,7 @@ void EyeExtractor::extractEyeLeft(const cv::Mat originalImage) {
 }
 
 void EyeExtractor::draw() {
-	if (!Application::Data::isTrackingSuccessful)
+    if (!Application::Data::isTrackingSuccessful)
 		return;
 
 	cv::Mat image = Application::Components::videoInput->debugFrame;
@@ -227,9 +256,7 @@ void EyeExtractor::draw() {
 	int eyeDY = eyeSize.height;
 
 	int baseX = 0;
-	int baseY = 0;
-	int stepX = 0;
-	int stepY = eyeDY;
+    int baseY = 0;
 
 	cv::cvtColor(eyeGrey, image(cv::Rect(baseX, baseY, eyeDX, eyeDY)), CV_GRAY2RGB);
 	//cv::cvtColor(*eyeGrey.get(), image(cv::Rect(baseX + stepX * 1, baseY + stepY * 1, eyeDX, eyeDY)), CV_GRAY2RGB);

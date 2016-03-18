@@ -3,9 +3,9 @@
 
 FaceDetector FaceDetector::faceDetector;
 
-FaceDetector::FaceDetector(char *cascadeName)
+FaceDetector::FaceDetector()
 {
-	_cascade.load(cascadeName);
+    _cascade.load("./data/haarcascade_frontalface_alt.xml");
 }
 
 
