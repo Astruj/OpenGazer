@@ -147,7 +147,7 @@ void FacePoseEstimator::calculatePose() {
     cv::solvePnP(_headPoints, detectedPoints,
             _projection, cv::noArray(),
             _rvec, _tvec, false,
-            cv::SOLVEPNP_ITERATIVE);    // For OpenCV 2.* this may be cv::ITERATIVE
+            0);    // hardcoded value for cv::SOLVEPNP_ITERATIVE or cv::ITERATIVE (to fix problems with different versions of OpenCV)
 
     cv::Matx33d rotation;
     cv::Rodrigues(_rvec, rotation);
