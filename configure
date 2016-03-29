@@ -11,18 +11,17 @@ fi
 
 # If dlib does not exist in the data directory, download it
 if [ ! -f ./data/dlib/setup.py ]; then
-    curl -o ./data/dlib-18.18.tar.bz2 http://dlib.net/files/dlib-18.18.tar.bz2
-    bzip2 -d ./data/dlib-18.18.tar.bz2
+    curl -o ./data/dlib-18.18.zip http://dlib.net/files/dlib-18.18.zip
     cd data
-    tar xopf ./dlib.tar
+    unzip ./dlib-18.18.zip
     mv ./dlib-18.18/ ./dlib
     cd ..
 fi
 
 if [ $UNAME = "Linux" ]; then
-	qmake opengazer.pro
+    qmake opengazer.pro
 fi
 
 if [ $UNAME = "Darwin" ]; then
-	qmake -spec macx-g++ opengazer.pro
+    qmake -spec macx-g++ opengazer.pro
 fi
