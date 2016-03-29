@@ -3,7 +3,7 @@
 
 #include "GazeTrackerHistogramFeatures.h"
 #include "Point.h"
-#include "mir.h"
+//#include "mir.h"
 #include "Application.h"
 
 GazeTrackerHistogramFeatures::GazeTrackerHistogramFeatures()

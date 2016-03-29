@@ -103,7 +103,6 @@ void EyeExtractor::extractEye(const cv::Mat originalImage) {
     double y1 = 0;
 
     if(_facePoseEstimator->isActive()) {
-        std::cout << "Trying to get from face pose estimator" << std::endl;
         x0 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
         y0 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
         x1 = _facePoseEstimator->facialLandmarks[LEFT_EYE].x;

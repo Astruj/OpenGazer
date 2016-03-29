@@ -6,24 +6,24 @@ QT += gui widgets
 
 HEADERS += 	Calibrator.h HeadTracker.h LeastSquares.h EyeExtractor.h GazeTracker.h MainGazeTracker.h OutputMethods.h PointTracker.h FaceDetector.h Point.h utils.h BlinkDetector.h FeatureDetector.h mir.h DebugWindow.h Application.h Video.h AnchorPointSelector.h Command.h ImageWindow.h ImageWidget.h TestWindow.h Prefix.hpp HiResTimer.h EyeCenterDetector.h GoogleGlassWindow.h EyeExtractorSegmentationGroundTruth.h FrogGame.h HistogramFeatureExtractor.h PointTrackerWithTemplate.h GazeTrackerHistogramFeatures.h Component.h Configuration.h FacePoseEstimator.h
 
-SOURCES += 	opengazer.cpp Calibrator.cpp HeadTracker.cpp LeastSquares.cpp EyeExtractor.cpp GazeTracker.cpp MainGazeTracker.cpp OutputMethods.cpp PointTracker.cpp FaceDetector.cpp Point.cpp utils.cpp BlinkDetector.cpp FeatureDetector.cpp mir.cpp DebugWindow.cpp Application.cpp Video.cpp AnchorPointSelector.cpp Command.cpp ImageWindow.cpp ImageWidget.cpp TestWindow.cpp HiResTimer.cpp EyeCenterDetector.cpp GoogleGlassWindow.cpp EyeExtractorSegmentationGroundTruth.cpp  FrogGame.cpp HistogramFeatureExtractor.cpp PointTrackerWithTemplate.cpp GazeTrackerHistogramFeatures.cpp Configuration.cpp FacePoseEstimator.cpp /home/onur/libs/dlib/dlib/all/source.cpp
+SOURCES += 	opengazer.cpp Calibrator.cpp HeadTracker.cpp LeastSquares.cpp EyeExtractor.cpp GazeTracker.cpp MainGazeTracker.cpp OutputMethods.cpp PointTracker.cpp FaceDetector.cpp Point.cpp utils.cpp BlinkDetector.cpp FeatureDetector.cpp mir.cpp DebugWindow.cpp Application.cpp Video.cpp AnchorPointSelector.cpp Command.cpp ImageWindow.cpp ImageWidget.cpp TestWindow.cpp HiResTimer.cpp EyeCenterDetector.cpp GoogleGlassWindow.cpp EyeExtractorSegmentationGroundTruth.cpp  FrogGame.cpp HistogramFeatureExtractor.cpp PointTrackerWithTemplate.cpp GazeTrackerHistogramFeatures.cpp Configuration.cpp FacePoseEstimator.cpp ./data/dlib/dlib/all/source.cpp
 
 TARGET  = 	opengazer
 
-QMAKE_CFLAGS 	+= `pkg-config opencv --cflags` -include Prefix.hpp -Wno-sign-compare -Wno-reorder -Wno-unused-variable -Wno-unused-function -Wno-unused-result -Wno-unused-parameter -Wno-unknown-pragmas
-QMAKE_CXXFLAGS 	+= `pkg-config opencv --cflags` -include Prefix.hpp -Wno-sign-compare -Wno-reorder -Wno-unused-variable -Wno-unused-function -Wno-unused-result -Wno-unused-parameter -Wno-unknown-pragmas
+QMAKE_CFLAGS 	+= `pkg-config opencv --cflags` -I./data/dlib/ -include Prefix.hpp -Wno-sign-compare -Wno-reorder -Wno-unused-variable -Wno-unused-function -Wno-unused-result -Wno-unused-parameter -Wno-unknown-pragmas
+QMAKE_CXXFLAGS 	+= `pkg-config opencv --cflags` -I./data/dlib/ -include Prefix.hpp -Wno-sign-compare -Wno-reorder -Wno-unused-variable -Wno-unused-function -Wno-unused-result -Wno-unused-parameter -Wno-unknown-pragmas
 QMAKE_LIBS 	+= `pkg-config opencv --libs`
 
 macx {
 	QMAKE_MAC_SDK=macosx10.11
     
 	# Mac OS X linker parameters and include directories
-	QMAKE_LIBS += -L/opt/local/lib -L/usr/local/lib -lm -ldl -lfann -lboost_filesystem-mt -lboost_system-mt -lgsl -lgslcblas
+	QMAKE_LIBS += -L/usr/local/lib -lm -ldl -lfann -lboost_filesystem-mt -lboost_system-mt -lgsl  -lgslcblas -llapack -lblas
 
 	# NOTE: Depending on your Mac OS X / XCode version you might need to use the
 	# configuration that is commented out
-	QMAKE_CFLAGS 	+= -stdlib=libc++
-	QMAKE_CXXFLAGS 	+= -stdlib=libc++
+	QMAKE_CFLAGS 	+= -stdlib=libc++ -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
+	QMAKE_CXXFLAGS 	+= -stdlib=libc++ -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
     QMAKE_LFLAGS    += -stdlib=libc++
 
     QMAKE_CXXFLAGS += -I`brew --prefix boost`/include
@@ -38,7 +38,7 @@ unix:!macx {
 	QMAKE_LIBS += -L/usr/local/lib -L/opt/local/lib -lm -ldl -lgthread-2.0 -lfann -lboost_filesystem -lboost_system -lgsl -lgslcblas -llapack -lblas
 	#QMAKE_LIBS += -L/usr/local/cuda-6.5/lib64/ -lGLEW
 
-    QMAKE_CFLAGS 	+= -I/home/onur/libs/dlib -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
-    QMAKE_CXXFLAGS 	+= -I/home/onur/libs/dlib -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
+    QMAKE_CFLAGS 	+= -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
+    QMAKE_CXXFLAGS 	+= -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
 	INCLUDEPATH += /usr/local/include 
 }

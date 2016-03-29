@@ -1,8 +1,8 @@
 #pragma once
 
 // Use BLAS and LAPACK libraries for dlib
-#define DLIB_USE_BLAS
-#define DLIB_USE_LAPACK
+//#define DLIB_USE_BLAS
+//#define DLIB_USE_LAPACK
 
 #include "Component.h"
 

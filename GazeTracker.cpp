@@ -5,7 +5,7 @@
 
 #include "GazeTracker.h"
 #include "Point.h"
-#include "mir.h"
+//#include "mir.h"
 #include "Application.h"
 
 

@@ -12,13 +12,13 @@ Point::Point(double x, double y):
 {
 }
 
-Point::Point(CvPoint2D32f const &point):
+Point::Point(cv::Point2f const &point):
 	x(point.x),
 	y(point.y)
 {
 }
 
-Point::Point(CvPoint const &point):
+Point::Point(cv::Point const &point):
 	x(point.x),
 	y(point.y)
 {
@@ -52,18 +52,6 @@ int Point::closestPoint(const std::vector<Point> &points) const {
     return minIndex;
 }
 
-void Point::save(CvFileStorage *out, const char *name) const {
-    cvStartWriteStruct(out, name, CV_NODE_MAP);
-    cvWriteReal(out, "x", x);
-    cvWriteReal(out, "y", y);
-    cvEndWriteStruct(out);
-}
-
-void Point::load(CvFileStorage *in, CvFileNode *node) {
-    x = cvReadRealByName(in, node, "x");
-    y = cvReadRealByName(in, node, "y");
-}
-
 Point Point::operator+(const Point &other) const {
     return Point(x + other.x, y + other.y);
 }
@@ -72,12 +60,7 @@ Point Point::operator-(const Point &other) const {
     return Point(x - other.x, y - other.y);
 }
 
-void Point::operator=(CvPoint2D32f const &point) {
-    x = point.x;
-    y = point.y;
-}
-
-void Point::operator=(CvPoint const &point) {
+void Point::operator=(cv::Point const &point) {
     x = point.x;
     y = point.y;
 }

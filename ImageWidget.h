@@ -3,7 +3,6 @@
 #include <QWidget>
 #include <QImage>
 #include <QPainter>
-#include <opencv2/opencv.hpp>
 
 class ImageWidget : public QWidget
 {

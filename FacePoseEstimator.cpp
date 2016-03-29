@@ -152,13 +152,33 @@ void FacePoseEstimator::calculatePose() {
     cv::Matx33d rotation;
     cv::Rodrigues(_rvec, rotation);
 
-
+    headPose(0,0) = rotation(0,0);
+    headPose(0,1) = rotation(0,1);
+    headPose(0,2) = rotation(0,2);
+    headPose(0,3) = _tvec.at<double>(0)/1000;
+    
+    headPose(1,0) = rotation(1,0);
+    headPose(1,1) = rotation(1,1);
+    headPose(1,2) = rotation(1,2);
+    headPose(1,3) = _tvec.at<double>(1)/1000;
+    
+    headPose(2,0) = rotation(2,0);
+    headPose(2,1) = rotation(2,1);
+    headPose(2,2) = rotation(2,2);
+    headPose(2,3) = _tvec.at<double>(2)/1000;
+    
+    headPose(3,0) = 0;
+    headPose(3,1) = 0;
+    headPose(3,2) = 0;
+    headPose(3,3) = 1;
+    
+    /*
     headPose = {
         rotation(0,0),    rotation(0,1),    rotation(0,2),    _tvec.at<double>(0)/1000,
         rotation(1,0),    rotation(1,1),    rotation(1,2),    _tvec.at<double>(1)/1000,
         rotation(2,0),    rotation(2,1),    rotation(2,2),    _tvec.at<double>(2)/1000,
                     0,                0,                0,                     1
-    };
+    };*/
 }
 
 bool FacePoseEstimator::detectFace() {    

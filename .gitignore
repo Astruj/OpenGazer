@@ -1,10 +1,13 @@
 outputs/*.txt_
 outputs/*.txt
 data/shape_predictor_68_face_landmarks.dat
+data/dlib/*
+data/dlib.tar
+matlab/*
 opengazer.app/*
 opengazer
 moc_*.cpp
 *.o
 *.gch
-
+.qmake.stash
 Makefile

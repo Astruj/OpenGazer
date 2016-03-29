@@ -6,7 +6,7 @@
 #include "Application.h"
 
 namespace Utils {
-	boost::shared_ptr<cv::Mat> createImage(const CvSize &size, int type) {
+	boost::shared_ptr<cv::Mat> createImage(const cv::Size &size, int type) {
 		return boost::shared_ptr<cv::Mat>(new cv::Mat(size, type), releaseImage);
 	}
 
@@ -270,24 +270,6 @@ namespace Utils {
 		else {
 			resized = gray;
 		}
-	}
-
-	void printMat(CvMat *mat) {
-		printf("(%dx%d)\n", mat->cols, mat->rows);
-		for (int i = 0; i < mat->rows; i++) {
-			if (i == 0) {
-				for (int j = 0; j < mat->cols; j++) {
-					printf("%10d", j + 1);
-				}
-			}
-
-			printf("\n%4d: ", i + 1);
-			for (int j = 0; j < mat->cols; j++) {
-				printf("%10.2f", cvGet2D(mat, i, j).val[0]);
-			}
-		}
-
-		printf("\n");
 	}
 
 	void printMat(cv::Mat mat) {

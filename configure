@@ -9,6 +9,15 @@ if [ ! -f ./data/shape_predictor_68_face_landmarks.dat ]; then
     echo "Done!"
 fi
 
+# If dlib does not exist in the data directory, download it
+if [ ! -f ./data/dlib/setup.py ]; then
+    curl -o ./data/dlib-18.18.tar.bz2 http://dlib.net/files/dlib-18.18.tar.bz2
+    bzip2 -d ./data/dlib-18.18.tar.bz2
+    cd data
+    tar xopf ./dlib.tar
+    mv ./dlib-18.18/ ./dlib
+    cd ..
+fi
 
 if [ $UNAME = "Linux" ]; then
 	qmake opengazer.pro

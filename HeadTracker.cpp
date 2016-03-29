@@ -64,7 +64,7 @@ void HeadTracker::draw() {
 	}
 
 	double scale = 10;
-	cv::line(image, cv::Point(320, 240), cvPoint(320 + int(rotY * scale), 240 + int(rotX * scale)), cv::Scalar(255,255,255));
+	cv::line(image, cv::Point(320, 240), cv::Point(320 + int(rotY * scale), 240 + int(rotX * scale)), cv::Scalar(255,255,255));
 }
 
 void HeadTracker::process() {

@@ -115,7 +115,7 @@ namespace Utils {
 	}
 
 
-	boost::shared_ptr<cv::Mat> createImage(const CvSize &size, int type);
+	boost::shared_ptr<cv::Mat> createImage(const cv::Size &size, int type);
 	void releaseImage(cv::Mat *image);
 
 	cv::Rect* getMonitorGeometryByIndex(int screenIndex);
@@ -146,7 +146,6 @@ namespace Utils {
 
 	void convertAndResize(const cv::Mat &src, cv::Mat& gray, cv::Mat& resized, double scale);
 	
-	void printMat(CvMat *mat);
 	void printMat(cv::Mat mat);
 }
 

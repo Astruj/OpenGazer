@@ -2,7 +2,6 @@
 #include <QWidget>
 #include <QImage>
 #include <QPainter>
-#include <opencv2/opencv.hpp>
 
 #include "GazeTracker.h"
 #include "ImageWindow.h"
