@@ -288,7 +288,7 @@ void MainGazeTracker::process() {
     double errorHorizontal, errorVertical, errorCombined;
     
 	// Read the next camera/video frame
-	Application::Components::videoInput->updateFrame();
+    Application::Components::videoInput->updateFrame();
 
 	// Wait a little so that the marker stays on the screen for a longer time
 //	if ((Application::status == Application::STATUS_CALIBRATING || Application::status == Application::STATUS_TESTING) && !Application::Components::videoInput->captureFromVideo) {
@@ -517,6 +517,10 @@ void MainGazeTracker::choosePoints() {
 
 void MainGazeTracker::clearPoints() {
 	Application::Signals::initiatePointClearingFrameNo = Application::Components::videoInput->frameCount + 1;
+}
+
+void MainGazeTracker::addFaceSample() {
+    Application::Signals::addFaceSample = true;
 }
 
 void MainGazeTracker::addComponent(std::string name, Component *component) {

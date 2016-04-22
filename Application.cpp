@@ -43,6 +43,7 @@ namespace Application {
 		int initiateTestingFrameNo = -1;
 		int initiatePointSelectionFrameNo = -1;
 		int initiatePointClearingFrameNo = -1;
+        bool addFaceSample = false;
 	}
 
 	namespace Data {

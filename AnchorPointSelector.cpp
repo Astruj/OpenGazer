@@ -202,7 +202,7 @@ bool AnchorPointSelector::detectEyeCorners(cv::Mat image, double resolution, cv:
 	cv::Mat eyeRegionImageGray(cv::Size(largestObject.width, largestObject.height), CV_8UC1);
 
 	image(largestObject).copyTo(eyeRegionImage);
-	cv::cvtColor(eyeRegionImage, eyeRegionImageGray, CV_RGB2GRAY);
+    cv::cvtColor(eyeRegionImage, eyeRegionImageGray, CV_BGR2GRAY);
 
 	Utils::normalizeGrayScaleImage(&eyeRegionImageGray, 127, 80);
 
@@ -270,8 +270,8 @@ void AnchorPointSelector::detectEyebrowCorners(cv::Mat image, double resolution,
 	image(eyebrowRect2).copyTo(eyebrowRegionImage2);
 
 	//cvSaveImage("eyebrows.png", eyebrowRegionImage);
-	cv::cvtColor(eyebrowRegionImage, eyebrowRegionImageGray, CV_RGB2GRAY);
-	cv::cvtColor(eyebrowRegionImage2, eyebrowRegionImageGray2, CV_RGB2GRAY);
+    cv::cvtColor(eyebrowRegionImage, eyebrowRegionImageGray, CV_BGR2GRAY);
+    cv::cvtColor(eyebrowRegionImage2, eyebrowRegionImageGray2, CV_BGR2GRAY);
 
 	std::vector<cv::Point2f> *corners = detectCornersInGrayscale(eyebrowRegionImageGray, 1);
 	std::vector<cv::Point2f> *corners2 = detectCornersInGrayscale(eyebrowRegionImageGray2, 1);

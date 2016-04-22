@@ -57,7 +57,7 @@ void EyeExtractor::process() {
 		extractEye(frame);
 		extractEyeLeft(frame);
         
-        //cv::imwrite("blink_eye_" + boost::lexical_cast<std::string>(imageNo) + ".png", *eyeFloat);
+        //cv::imwrite("eye_" + boost::lexical_cast<std::string>(imageNo) + ".png", eyeImage);
         imageNo++;
         
 		// Blink detection
@@ -161,13 +161,13 @@ void EyeExtractor::extractEye(const cv::Mat originalImage) {
 
 	// Calculate the transformation matrix between two sets of points, and use it to extract eye image
 	cv::Mat transform = cv::getAffineTransform(originalImagePoints, extractedImagePoints);
-	warpAffine(originalImage, eyeImage, transform, eyeSize);
-	cv::cvtColor(eyeImage, eyeGrey, CV_RGB2GRAY);
+    cv::warpAffine(originalImage, eyeImage, transform, eyeSize);
+    cv::cvtColor(eyeImage, eyeGrey, CV_BGR2GRAY);
 
 	// Apply blurring and normalization
 	//Utils::normalizeGrayScaleImage(eyeGrey.get(), 127, 50);	// TODO ONUR UNCOMMENT
 	eyeGrey.convertTo(eyeFloat, CV_32FC1);
-	cv::GaussianBlur(eyeFloat, eyeFloat, cv::Size(3,3), 0);
+    //cv::GaussianBlur(eyeFloat, eyeFloat, cv::Size(3,3), 0);
 	cv::equalizeHist(eyeGrey, eyeGrey);
 }
 
@@ -236,13 +236,13 @@ void EyeExtractor::extractEyeLeft(const cv::Mat originalImage) {
 
 	// Calculate the transformation matrix between two sets of points, and use it to extract eye image
 	cv::Mat transform = cv::getAffineTransform(originalImagePoints, extractedImagePoints);
-	warpAffine(originalImage, eyeImageLeft, transform, eyeSize);
-	cv::cvtColor(eyeImageLeft, eyeGreyLeft, CV_RGB2GRAY);
+    cv::warpAffine(originalImage, eyeImageLeft, transform, eyeSize);
+    cv::cvtColor(eyeImageLeft, eyeGreyLeft, CV_BGR2GRAY);
 
 	// Apply blurring and normalization
 	//Utils::normalizeGrayScaleImage(eyeGreyLeft.get(), 127, 50);	// TODO ONUR UNCOMMENT
 	eyeGreyLeft.convertTo(eyeFloatLeft, CV_32FC1);
-	cv::GaussianBlur(eyeFloatLeft, eyeFloatLeft, cv::Size(3,3), 0);
+    //cv::GaussianBlur(eyeFloatLeft, eyeFloatLeft, cv::Size(3,3), 0);
 	cv::equalizeHist(eyeGreyLeft, eyeGreyLeft);
 }
 
@@ -257,11 +257,11 @@ void EyeExtractor::draw() {
 	int baseX = 0;
     int baseY = 0;
 
-	cv::cvtColor(eyeGrey, image(cv::Rect(baseX, baseY, eyeDX, eyeDY)), CV_GRAY2RGB);
-	//cv::cvtColor(*eyeGrey.get(), image(cv::Rect(baseX + stepX * 1, baseY + stepY * 1, eyeDX, eyeDY)), CV_GRAY2RGB);
+    cv::cvtColor(eyeGrey, image(cv::Rect(baseX, baseY, eyeDX, eyeDY)), CV_GRAY2BGR);
+    //cv::cvtColor(*eyeGrey.get(), image(cv::Rect(baseX + stepX * 1, baseY + stepY * 1, eyeDX, eyeDY)), CV_GRAY2BGR);
 
-	cv::cvtColor(eyeGreyLeft, image(cv::Rect(baseX + 140, baseY, eyeDX, eyeDY)), CV_GRAY2RGB);
-	//cv::cvtColor(*eyeGreyLeft.get(), image(cv::Rect(baseX + 100, baseY + stepY * 1, eyeDX, eyeDY)), CV_GRAY2RGB);
+    cv::cvtColor(eyeGreyLeft, image(cv::Rect(baseX + 140, baseY, eyeDX, eyeDY)), CV_GRAY2BGR);
+    //cv::cvtColor(*eyeGreyLeft.get(), image(cv::Rect(baseX + 100, baseY + stepY * 1, eyeDX, eyeDY)), CV_GRAY2BGR);
 }
 
 // Prepares the eye extractor for calibration

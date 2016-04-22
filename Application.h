@@ -63,6 +63,7 @@ namespace Application {
 		extern int initiateTestingFrameNo;
 		extern int initiatePointSelectionFrameNo;
 		extern int initiatePointClearingFrameNo;
+        extern bool addFaceSample;
 	}
 
 	namespace Data {

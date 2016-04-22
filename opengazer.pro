@@ -15,30 +15,31 @@ QMAKE_CXXFLAGS 	+= `pkg-config opencv --cflags` -I./data/dlib/ -include Prefix.h
 QMAKE_LIBS 	+= `pkg-config opencv --libs`
 
 macx {
-	QMAKE_MAC_SDK=macosx10.11
+    QMAKE_MAC_SDK=macosx10.11
     
-	# Mac OS X linker parameters and include directories
-	QMAKE_LIBS += -L/usr/local/lib -lm -ldl -lfann -lboost_filesystem-mt -lboost_system-mt -lgsl  -lgslcblas -llapack -lblas
+    # Mac OS X linker parameters and include directories
+    QMAKE_LIBS += -L/usr/local/lib -lm -ldl -lfann -lboost_filesystem-mt -lboost_system-mt -lgsl  -lgslcblas -llapack -lblas
 
-	# NOTE: Depending on your Mac OS X / XCode version you might need to use the
-	# configuration that is commented out
-	QMAKE_CFLAGS 	+= -stdlib=libc++ -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
-	QMAKE_CXXFLAGS 	+= -stdlib=libc++ -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
+    # NOTE: Depending on your Mac OS X / XCode version you might need to use the
+    # configuration that is commented out
+    QMAKE_CFLAGS 	+= -stdlib=libc++ -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
+    QMAKE_CXXFLAGS 	+= -stdlib=libc++ -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
     QMAKE_LFLAGS    += -stdlib=libc++
 
     QMAKE_CXXFLAGS += -I`brew --prefix boost`/include
     QMAKE_CXXFLAGS += -I`brew --prefix gsl`/include
 
-	#QMAKE_CFLAGS 	+= -stdlib=libstdc++
-	#QMAKE_CXXFLAGS 	+= -stdlib=libstdc++
+    #QMAKE_CFLAGS 	+= -stdlib=libstdc++
+    #QMAKE_CXXFLAGS 	+= -stdlib=libstdc++
 }
 
 unix:!macx {
-	# Linux linker parameters and include directories
-	QMAKE_LIBS += -L/usr/local/lib -L/opt/local/lib -lm -ldl -lgthread-2.0 -lfann -lboost_filesystem -lboost_system -lgsl -lgslcblas -llapack -lblas
-	#QMAKE_LIBS += -L/usr/local/cuda-6.5/lib64/ -lGLEW
+    # Linux linker parameters and include directories
+    QMAKE_LIBS += -L/usr/local/lib -L/opt/local/lib -lm -ldl -lgthread-2.0 -lfann -lboost_filesystem -lboost_system -lgsl -lgslcblas -llapack -lblas
+    #QMAKE_LIBS += -L/usr/local/cuda-6.5/lib64/ -lGLEW
 
     QMAKE_CFLAGS 	+= -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
     QMAKE_CXXFLAGS 	+= -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON
-	INCLUDEPATH += /usr/local/include 
+    INCLUDEPATH += /usr/local/include
+    QMAKE_CXXFLAGS += -I/usr/include/eigen3
 }

@@ -7,15 +7,16 @@
 #include <QApplication>
 
 int main(int argc, char **argv) {
-	try {
-		QApplication app(argc, argv);
-		MainGazeTracker tracker(argc, argv);
-		
-		return app.exec();
-	}
-	catch (Utils::QuitNow) {
-		std::cout << "Caught it!\n";
-	}
+    QApplication app(argc, argv);
 
-	return 0;
+    try {
+        MainGazeTracker tracker(argc, argv);
+
+        return app.exec();
+    }
+    catch (Utils::QuitNow) {
+        app.quit();
+    }
+
+    return 0;
 }

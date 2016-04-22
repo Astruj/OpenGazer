@@ -7,6 +7,7 @@
 #include "FaceDetector.h"
 #include "utils.h"
 
+
 using Utils::operator<<;
 using Utils::operator>>;
 
@@ -56,16 +57,15 @@ void PointTracker::track() {
 		assert(lastPoints.size() == currentPoints.size());
 		assert(origPoints.size() == currentPoints.size());
 		status.resize(currentPoints.size());
-        
-		cvtColor(Application::Components::videoInput->frame, grey, CV_BGR2GRAY);
 
+        cvtColor(Application::Components::videoInput->frame, grey, CV_BGR2GRAY);
 /*
 		if (Application::faceRectangle != NULL) {
 			Utils::normalizeGrayScaleImage_NEW(grey(*Application::faceRectangle), 90, 160);
 		}
 */
-		// Apply median filter of 5x5
-		medianBlur(grey, grey, 5);
+        // Apply median filter of 5x5
+        //medianBlur(grey, grey, 5);    // COMMENTED OUT BECAUSE IT STARTED BEING TOO SLOW ON OPENCV 3.1
 
 		if (!currentPoints.empty()) {
 			if(Application::Settings::noTracking) {
@@ -87,7 +87,7 @@ void PointTracker::track() {
 					cv::Size(_winSize,_winSize),
 					_pyramidDepth * 3,
 					cv::TermCriteria(CV_TERMCRIT_EPS, 20, 0.03),
-					_flags);
+                    _flags);
 
 				_flags |= CV_LKFLOW_PYR_A_READY;
 			}

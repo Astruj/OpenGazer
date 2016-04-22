@@ -85,6 +85,7 @@ public:
 	void process();
 	void draw();
     bool isActive();
+    void addFaceSample();
 	
     bool isFaceInitialized;
 	cv::Rect faceRectangle;
@@ -92,7 +93,7 @@ public:
     dlib::rectangle faceRectangleDlib;
 	std::vector<cv::Point> facialLandmarks;
     cv::Matx44d headPose;
-	
+
 private:
     bool _isActive;
     dlib::array2d<dlib::rgb_pixel> _videoFrame;
@@ -107,6 +108,11 @@ private:
     cv::Matx33f _projection;
     std::vector<cv::Point3f> _headPoints;
     std::vector<cv::Point3f> _eyeRegionPoints;
+
+    std::vector<cv::Mat> _faceSamples;
+    std::vector<cv::Mat> _cameraRotations;
+    std::vector<cv::Mat> _cameraTranslations;
+    std::vector<cv::Mat> _facialLandmarks3d;
     
     bool detectFace();
     void allocateFaceTracker();

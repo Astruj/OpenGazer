@@ -20,6 +20,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 
+#include <opencv2/sfm.hpp>
+#include <opencv2/sfm/reconstruct.hpp>
+
 // TODO UPDATE FOCAL LENGTH (FROM CAMERA CALIBRATION)
 #define FOCAL_LENGTH 685
 
@@ -30,12 +33,12 @@ FacePoseEstimator::FacePoseEstimator() :
     // A multiplier to correct for the generic head model used below
     // With this, the distances are calculated more accurately (validated using the dataset from
     // our previous work: http://mv.cvc.uab.es/projects/eye-tracker/cvceyetrackerdb )
-    float focalLengthMultiplier = 0.87;
+    float focalLengthMultiplier = 1; //0.87;    ONUR Stopped using this thing for now. Hopefully SFM will make it useless
 
     // Load the pretrained shape predictor
     // The file can be downloaded from
     // http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
-    // TODO Download file in the configuration script
+    // and the configure.sh script should download it automatically to the correct folder
     dlib::deserialize("./data/shape_predictor_68_face_landmarks.dat") >> _faceShapePredictor;
     
     _faceDetector = dlib::get_frontal_face_detector();
@@ -124,6 +127,13 @@ void FacePoseEstimator::process() {
 
         Application::Data::isTrackingSuccessful = true;
         calculatePose();
+
+        // If there was a mouse click on the debug window
+        // Add another sample for the calculation of the face structure
+        if(Application::Signals::addFaceSample) {
+            addFaceSample();
+            Application::Signals::addFaceSample = false;
+        }
     }
 }
 
@@ -138,7 +148,6 @@ void FacePoseEstimator::calculatePose() {
     detectedPoints.push_back(facialLandmarks[LEFT_SIDE]);
     detectedPoints.push_back(facialLandmarks[MENTON]);
     detectedPoints.push_back(facialLandmarks[NOSE]);
-
 
     cv::Point2f stomion = (facialLandmarks[MOUTH_CENTER_TOP] + facialLandmarks[MOUTH_CENTER_BOTTOM]) * 0.5;
     detectedPoints.push_back(stomion);
@@ -274,6 +283,73 @@ void FacePoseEstimator::trackFace() {
                        faceRectangle.x + r, faceRectangle.y + r) &
                     cv::Rect(0, 0, cols, rows);
                     */
+}
+
+void FacePoseEstimator::addFaceSample() {
+    const int numPoints = 5;
+
+    cv::Mat *newSample = new cv::Mat_<double>(2, numPoints);
+
+    // Add the current facial landmarks to the sample array
+    newSample->at<double>(0, 0) = facialLandmarks[SELLION].x;
+    newSample->at<double>(0, 1) = facialLandmarks[RIGHT_EYE].x;
+    newSample->at<double>(0, 2) = facialLandmarks[LEFT_EYE].x;
+    newSample->at<double>(0, 3) = facialLandmarks[NOSE].x;
+    newSample->at<double>(0, 4) = facialLandmarks[MENTON].x;
+
+    newSample->at<double>(1, 0) = facialLandmarks[SELLION].y;
+    newSample->at<double>(1, 1) = facialLandmarks[RIGHT_EYE].y;
+    newSample->at<double>(1, 2) = facialLandmarks[LEFT_EYE].y;
+    newSample->at<double>(1, 3) = facialLandmarks[NOSE].y;
+    newSample->at<double>(1, 4) = facialLandmarks[MENTON].y;
+
+    _faceSamples.push_back(*newSample);
+
+    std::cout << "Added face sample!!" << std::endl;
+/*
+    const int nframes = static_cast<int>(_faceSamples.size());
+    std::cout << "nframes=" << nframes << std::endl;
+    for (int frame = 0; frame < nframes; ++frame) {
+        std::cout << "Checking frame " << frame << std::endl;
+      const int ntracks = _faceSamples[frame].cols;
+
+      std::cout << "ntracks=" << ntracks << std::endl;
+
+      for (int track = 0; track < ntracks; ++track) {
+          std::cout << "Checking track " << track<< std::endl;
+        const cv::Vec2d track_pt = _faceSamples[frame].col(track);
+
+        std::cout << "Vector 2D =" << track_pt<< std::endl;
+      }
+      std::cout << std::endl<< std::endl;
+    }
+*/
+    // If there are enough samples, run the structure from motion library's reconstruct function
+    if(_faceSamples.size() > 5) {
+        _facialLandmarks3d.clear();
+        _cameraRotations.clear();
+        _cameraTranslations.clear();
+
+        std::cout << "Enough samples! Trying reconstruction" << std::endl;
+        std::cout << "Here is the first landmark in 2D for all frames" << std::endl;
+
+        for(int i=0; i<_faceSamples.size(); i++)
+            std::cout << cv::Vec2d(_faceSamples[i].col(0)) << std::endl;
+
+        cv::sfm::reconstruct(_faceSamples, _cameraRotations, _cameraTranslations, _projection, _facialLandmarks3d, true);
+
+        std::cout << "3D landmarks size: " << _facialLandmarks3d.size() << std::endl;
+
+        // TODO Update the generic head model with the newly calculated 3D positions
+
+        std::cout << "Here is the same landmark in 3D" << std::endl;
+        if(_facialLandmarks3d.size() > 0)
+            std::cout << _facialLandmarks3d[0] << std::endl;
+
+        std::cout << std::endl << std::endl;
+    }
+
+    std::cout << std::endl;
 }
 
 bool FacePoseEstimator::isActive() {

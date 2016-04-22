@@ -135,7 +135,7 @@ void EyeExtractorSegmentationGroundTruth::extractEye(cv::Mat originalImage) {
 	// Calculate the transformation matrix between two sets of points, and use it to extract eye image
 	cv::Mat transform = cv::getAffineTransform(originalImagePoints, extractedImagePoints);
 	warpAffine(originalImage, *eyeImage.get(), transform, eyeSize);
-	//cv::cvtColor(*eyeImage.get(), *eyeGrey.get(), CV_RGB2GRAY);
+    //cv::cvtColor(*eyeImage.get(), *eyeGrey.get(), CV_BGR2GRAY);
 	
 	// Apply blurring and normalization
 	//Utils::normalizeGrayScaleImage(eyeGrey.get(), 127, 50);	// TODO ONUR UNCOMMENT
@@ -201,7 +201,7 @@ void EyeExtractorSegmentationGroundTruth::extractEyeLeft(cv::Mat originalImage) 
 	// Calculate the transformation matrix between two sets of points, and use it to extract eye image
 	cv::Mat transform = cv::getAffineTransform(originalImagePoints, extractedImagePoints);
 	warpAffine(originalImage, *eyeImageLeft.get(), transform, eyeSize);
-	//cv::cvtColor(*eyeImageLeft.get(), *eyeGreyLeft.get(), CV_RGB2GRAY);
+    //cv::cvtColor(*eyeImageLeft.get(), *eyeGreyLeft.get(), CV_BGR2GRAY);
 	
 	// Apply blurring and normalization
 	//Utils::normalizeGrayScaleImage(eyeGreyLeft.get(), 127, 50);	// TODO ONUR UNCOMMENT

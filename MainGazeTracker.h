@@ -9,6 +9,7 @@
 #include "OutputMethods.h"
 #include "Video.h"
 #include "Command.h"
+#include "HiResTimer.h"
 
 #include <QObject>
 #include <QTimer>
@@ -31,6 +32,7 @@ public slots:
 	void startTesting();
 	void choosePoints();
 	void clearPoints();
+    void addFaceSample();
 	
 private:
 	std::vector<boost::shared_ptr<AbstractStore> > _stores;
@@ -49,6 +51,8 @@ private:
 	
 	int _headDistance;
 	QTimer _timer;
+
+    HiResTimer performanceTimer;
     
     void addComponent(std::string name, Component *component);
     void calculateError(Point estimation, Point target, double &errorHorizontal, double &errorVertical, double &errorCombined);
