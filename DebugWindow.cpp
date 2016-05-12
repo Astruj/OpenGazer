@@ -24,6 +24,9 @@ DebugWindow::DebugWindow() :
 
     shortcut = new QShortcut(QKeySequence(Qt::Key_A), &_window);
     QObject::connect(shortcut, SIGNAL(activated()), Application::Components::mainTracker, SLOT(addFaceSample()));
+
+    shortcut = new QShortcut(QKeySequence(Qt::Key_M), &_window);
+    QObject::connect(shortcut, SIGNAL(activated()), Application::Components::mainTracker, SLOT(switchFaceModel()));
 	
 	_window.show();
 	_window.raise();

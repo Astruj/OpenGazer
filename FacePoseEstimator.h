@@ -11,22 +11,6 @@
 #include <dlib/image_io.h>
 #include <dlib/opencv.h>
 
-
-/*
- * OpenCV Camshift implementation adapted from Billy Lamberta's gist:
- *
- *      https://gist.github.com/lamberta/231696
- */
-typedef struct {
-  cv::Mat hsv;     //input image converted to HSV
-  cv::Mat hue;     //hue channel of HSV image
-  cv::Mat mask;    //image for masking pixels
-  cv::Mat prob;    //face probability estimates for each pixel
-
-  cv::Mat hist;     //histogram of hue in original face image
-} TrackedObject;
-
-
 /*
  * OpenCV head pose angle estimation implementation adapted from CHILI Lab / EPFL:
  *
@@ -39,17 +23,35 @@ typedef struct {
 const static cv::Point3f P3D_SELLION(0., 0.,0.);
 const static cv::Point3f P3D_RIGHT_EYE(-20., -65,-5.);
 const static cv::Point3f P3D_LEFT_EYE(-20., 65,-5.);
-const static cv::Point3f P3D_RIGHT_EAR(-100., -74.5,-6.);
-const static cv::Point3f P3D_LEFT_EAR(-100., 74.5,-6.);
 const static cv::Point3f P3D_NOSE(21.0, 0., -46.0);
-const static cv::Point3f P3D_STOMMION(10.0, 0., -73.0);
 const static cv::Point3f P3D_MENTON(0., 0.,-128.5);
 
+// 3 additional points for the extended model
+const static cv::Point3f P3D_RIGHT_EAR(-100., -74.5,-6.);
+const static cv::Point3f P3D_LEFT_EAR(-100., 74.5,-6.);
+const static cv::Point3f P3D_STOMMION(10.0, 0., -73.0);
 
-const static cv::Point3f P3D_EYE_REGION_TOP_RIGHT(-20., -65, 8.);
-const static cv::Point3f P3D_EYE_REGION_TOP_LEFT(-20., 65, 8.);
-const static cv::Point3f P3D_EYE_REGION_BOTTOM_RIGHT(-20., -65, -15.);
-const static cv::Point3f P3D_EYE_REGION_BOTTOM_LEFT(-20., 65, -15.);
+// Indexes for the personal parameters for the head model
+#define PAR_EYE_DEPTH 0
+#define PAR_EYE_SEPARATION 1
+#define PAR_NOSE_DEPTH 2
+#define PAR_NOSE_LENGTH 3
+#define PAR_MENTON_LENGTH 4
+
+#define PAR_EAR_DEPTH 5
+#define PAR_EAR_SEPARATION 6
+#define PAR_STOMMION_DEPTH 7
+#define PAR_STOMMION_LENGTH 8
+
+//#define EXTENDED_FACE_MODEL
+
+// If extended is defined, there will be 4 more parameters (ear and stommion)
+#ifdef EXTENDED_FACE_MODEL
+#define NUM_PERSONAL_PARAMETERS 9
+#else
+#define NUM_PERSONAL_PARAMETERS 5
+#endif
+
 
 enum FACIAL_FEATURE {
     NOSE=30,
@@ -87,37 +89,45 @@ public:
     bool isActive();
     void addFaceSample();
 	
-    bool isFaceInitialized;
+    bool isFaceFound;
 	cv::Rect faceRectangle;
-	cv::RotatedRect faceRotatedRectangle;
-    dlib::rectangle faceRectangleDlib;
 	std::vector<cv::Point> facialLandmarks;
-    cv::Matx44d headPose;
+    
+    cv::Point2f rightEye;
+    cv::Point2f leftEye;
 
 private:
     bool _isActive;
+    
     dlib::array2d<dlib::rgb_pixel> _videoFrame;
     dlib::array2d<dlib::rgb_pixel> _reducedSizeVideoFrame;
     dlib::frontal_face_detector _faceDetector;   // dlib face detector
     dlib::shape_predictor _faceShapePredictor;   // Pre-trained face shape predictor
     
-    TrackedObject _faceTracker;                     // Camshift tracker for the face
-
-
     cv::Mat _rvec, _tvec;
     cv::Matx33f _projection;
-    std::vector<cv::Point3f> _headPoints;
+    std::vector<cv::Point3f> _genericHeadModel;
+    std::vector<cv::Point3f> _headModel;
     std::vector<cv::Point3f> _eyeRegionPoints;
 
-    std::vector<cv::Mat> _faceSamples;
-    std::vector<cv::Mat> _cameraRotations;
-    std::vector<cv::Mat> _cameraTranslations;
+    int _sampleCount;
+    std::vector< std::vector<cv::Point2f> > _sampleFacePoints;
+    std::vector<cv::Mat> _sampleRvecs;
+    std::vector<cv::Mat> _sampleTvecs;
     std::vector<cv::Mat> _facialLandmarks3d;
+
+    // Variables for coordinate descent
+    std::vector<double> _parameters;
+    int _iterationNumber;
     
     bool detectFace();
-    void allocateFaceTracker();
-    void extractHueAndMask();
-    void resetFaceTracking(cv::Rect faceDetection);
-    void trackFace();
-    void calculatePose();
+    void estimateFacePose();
+    
+    void coordinateDescentIteration();
+    double calculateDerivative(int parameterIndex);
+    void calculateHeadModel(const std::vector<double> parameters, std::vector<cv::Point3f> &headModel);
+    double calculateProjectionErrors(const std::vector<cv::Point3f> model);
+    void projectPoints(const std::vector<cv::Point3f> model, const cv::Mat rvec, const cv::Mat tvec, std::vector<cv::Point2f> &projectedPoints);
+    void estimateFacePoseFrom2DPoints(const std::vector<cv::Point2f> facePoints, cv::Mat &rvec, cv::Mat &tvec, bool useExtrinsicGuess);
+    std::vector<cv::Point3f> getUsedHeadModel();
 };

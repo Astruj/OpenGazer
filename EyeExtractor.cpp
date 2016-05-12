@@ -103,10 +103,10 @@ void EyeExtractor::extractEye(const cv::Mat originalImage) {
     double y1 = 0;
 
     if(_facePoseEstimator->isActive()) {
-        x0 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
-        y0 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
-        x1 = _facePoseEstimator->facialLandmarks[LEFT_EYE].x;
-        y1 = _facePoseEstimator->facialLandmarks[LEFT_EYE].y;
+        x0 = _facePoseEstimator->rightEye.x; //_facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
+        y0 = _facePoseEstimator->rightEye.y; //_facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
+        x1 = _facePoseEstimator->leftEye.x; //_facePoseEstimator->facialLandmarks[LEFT_EYE].x;
+        y1 = _facePoseEstimator->leftEye.y; //_facePoseEstimator->facialLandmarks[LEFT_EYE].y;
     }
     else {
         x0 = _pointTracker->currentPoints[PointTracker::eyePoint1].x;
@@ -178,10 +178,10 @@ void EyeExtractor::extractEyeLeft(const cv::Mat originalImage) {
     double y1 = 0;
 
     if(_facePoseEstimator->isActive()) {
-        x0 = _facePoseEstimator->facialLandmarks[LEFT_EYE].x;
-        y0 = _facePoseEstimator->facialLandmarks[LEFT_EYE].y;
-        x1 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
-        y1 = _facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
+        x0 = _facePoseEstimator->leftEye.x; //_facePoseEstimator->facialLandmarks[LEFT_EYE].x;
+        y0 = _facePoseEstimator->leftEye.y; //_facePoseEstimator->facialLandmarks[LEFT_EYE].y;
+        x1 = _facePoseEstimator->rightEye.x; //_facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
+        y1 = _facePoseEstimator->rightEye.y; //_facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
     }
     else {
         x0 = _pointTracker->currentPoints[PointTracker::eyePoint2].x;

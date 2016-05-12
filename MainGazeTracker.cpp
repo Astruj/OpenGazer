@@ -523,6 +523,11 @@ void MainGazeTracker::addFaceSample() {
     Application::Signals::addFaceSample = true;
 }
 
+void MainGazeTracker::switchFaceModel() {
+	// Switch the used face model
+	Application::Signals::useGenericFaceModel = !Application::Signals::useGenericFaceModel;
+}
+
 void MainGazeTracker::addComponent(std::string name, Component *component) {
     Application::components.insert(std::make_pair(name, component));
 }

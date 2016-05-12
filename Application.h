@@ -64,6 +64,7 @@ namespace Application {
 		extern int initiatePointSelectionFrameNo;
 		extern int initiatePointClearingFrameNo;
         extern bool addFaceSample;
+		extern bool useGenericFaceModel;
 	}
 
 	namespace Data {

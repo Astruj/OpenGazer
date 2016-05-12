@@ -15,26 +15,19 @@
 
 #include <iostream>
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem.hpp>
 
 #include <opencv2/video/tracking.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 
-#include <opencv2/sfm.hpp>
-#include <opencv2/sfm/reconstruct.hpp>
-
 // TODO UPDATE FOCAL LENGTH (FROM CAMERA CALIBRATION)
 #define FOCAL_LENGTH 685
 
 FacePoseEstimator::FacePoseEstimator() :
-    isFaceInitialized(false),
+    isFaceFound(false),
     _isActive(false)
 {
-    // A multiplier to correct for the generic head model used below
-    // With this, the distances are calculated more accurately (validated using the dataset from
-    // our previous work: http://mv.cvc.uab.es/projects/eye-tracker/cvceyetrackerdb )
-    float focalLengthMultiplier = 1; //0.87;    ONUR Stopped using this thing for now. Hopefully SFM will make it useless
-
     // Load the pretrained shape predictor
     // The file can be downloaded from
     // http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
@@ -49,34 +42,27 @@ FacePoseEstimator::FacePoseEstimator() :
     // Prepare the projection matrix
     cv::Mat projectionMat = cv::Mat::zeros(3,3,CV_32F);
     _projection = projectionMat;
-    _projection(0,0) = FOCAL_LENGTH*focalLengthMultiplier;
-    _projection(1,1) = FOCAL_LENGTH*focalLengthMultiplier;
+    _projection(0,0) = FOCAL_LENGTH;
+    _projection(1,1) = FOCAL_LENGTH;
     _projection(0,2) = frame.size().width/2;
     _projection(1,2) = frame.size().height/2;
     _projection(2,2) = 1;
 
-    std::cout << "Frame size is " << frame.size().width << "x" << frame.size().height << std::endl;
+    //std::cout << "Frame size is " << frame.size().width << "x" << frame.size().height << std::endl;
 
-    // Prepare the array with points facial feature positions relative to "sellion"
-    // Numbers based on anthropometric properties for male adult (see .h for more info)
-    _headPoints.push_back(P3D_SELLION);
-    _headPoints.push_back(P3D_RIGHT_EYE);
-    _headPoints.push_back(P3D_LEFT_EYE);
-    _headPoints.push_back(P3D_RIGHT_EAR);
-    _headPoints.push_back(P3D_LEFT_EAR);
-    _headPoints.push_back(P3D_MENTON);
-    _headPoints.push_back(P3D_NOSE);
-    _headPoints.push_back(P3D_STOMMION);
+    // Fill the personal parameters related to face shape with default values (filled with 1s) 
+    for(int i=0; i<NUM_PERSONAL_PARAMETERS; i++)
+        _parameters.push_back(1.0);
 
-    _eyeRegionPoints.push_back(P3D_RIGHT_EYE);
-    _eyeRegionPoints.push_back(P3D_LEFT_EYE);
-    _eyeRegionPoints.push_back(P3D_EYE_REGION_TOP_RIGHT);
-    _eyeRegionPoints.push_back(P3D_EYE_REGION_TOP_LEFT);
-    _eyeRegionPoints.push_back(P3D_EYE_REGION_BOTTOM_RIGHT);
-    _eyeRegionPoints.push_back(P3D_EYE_REGION_BOTTOM_LEFT);
-
-    // Allocate the image structures used in the face tracker
-    allocateFaceTracker();
+    // Calculate the head model with the default parameters
+    calculateHeadModel(_parameters, _headModel);
+    calculateHeadModel(_parameters, _genericHeadModel);
+    
+    _sampleCount = 0;
+    _iterationNumber = 0;
+    
+    rightEye = cv::Point2f(-1, -1);
+    leftEye = cv::Point2f(-1, -1);
 }
 
 
@@ -87,32 +73,11 @@ void FacePoseEstimator::process() {
     // Create a wrapper dlib structure around the camera framepredictor
     dlib::assign_image(_reducedSizeVideoFrame, dlib::cv_image<dlib::bgr_pixel>(Application::Components::videoInput->reducedSizeFrame));
     dlib::assign_image(_videoFrame, dlib::cv_image<dlib::bgr_pixel>(Application::Components::videoInput->frame));
-
-    /*
-    // Every N=10 frames, refresh the face detection
-    if(counter % 10 == 0) {
-        // Try to detect the face
-        if(!detectFace()) {
-            // If face is not detected succesfully
-            // decrement counter to try detection in the next frame
-            //counter--;
-            
-            // Track the face using the previous detections
-            trackFace();
-            
-            std::cout << "NO faces found!" << std::endl;
-        }
-    }
-    else {
-        trackFace();
-    }
-    */
     
-    //counter++;
-    detectFace();
+    isFaceFound = detectFace();
 
-    if(isFaceInitialized) {
-        // Use the face detection (or last face tracking results) to predict face shape (landmark positions)
+    if(isFaceFound) {
+        // Use the face detection to predict face shape (landmark positions)
         dlib::full_object_detection shape = _faceShapePredictor(_videoFrame, dlib::rectangle(faceRectangle.x,
                                                                                            faceRectangle.y,
                                                                                            faceRectangle.x+faceRectangle.width-1,
@@ -126,7 +91,7 @@ void FacePoseEstimator::process() {
         }
 
         Application::Data::isTrackingSuccessful = true;
-        calculatePose();
+        estimateFacePose();
 
         // If there was a mouse click on the debug window
         // Add another sample for the calculation of the face structure
@@ -134,31 +99,215 @@ void FacePoseEstimator::process() {
             addFaceSample();
             Application::Signals::addFaceSample = false;
         }
+        
+        // If there were enough samples, do 5 iterations of coordinate descent 
+        if(_sampleCount > 4) {
+            HiResTimer timer;
+            
+            timer.start();
+            for(int iteration=0; iteration<5; iteration++)
+                coordinateDescentIteration();
+            timer.stop();
+        }
+        
+        // Update the estimations for left and right eye corners
+        std::vector<cv::Point2f> eyeCornerProjections;
+        projectPoints(getUsedHeadModel(), _rvec, _tvec, eyeCornerProjections);
+        
+        // Smooth the estimation a little bit
+        double alpha = 0; //0.3;    DISABLED SMOOTHING FOR NOW
+        rightEye.x = (alpha)*rightEye.x + (1-alpha)*eyeCornerProjections[1].x;
+        rightEye.y = (alpha)*rightEye.y + (1-alpha)*eyeCornerProjections[1].y;
+        
+        leftEye.x = (alpha)*leftEye.x + (1-alpha)*eyeCornerProjections[2].x;
+        leftEye.y = (alpha)*leftEye.y + (1-alpha)*eyeCornerProjections[2].y;
+        //std::cout << "Updating eye corner positions. Right eye position: (" << rightEye.x << ", " << rightEye.y << ")" << std::endl;
     }
 }
 
-void FacePoseEstimator::calculatePose() {
+void FacePoseEstimator::estimateFacePose() {
     // Prepare the array with corresponding point positions detected on the image
+    std::vector<cv::Point2f> point2d;
+
+    point2d.push_back(facialLandmarks[SELLION]);
+    point2d.push_back(facialLandmarks[RIGHT_EYE]);
+    point2d.push_back(facialLandmarks[LEFT_EYE]);
+    point2d.push_back(facialLandmarks[NOSE]);
+    point2d.push_back(facialLandmarks[MENTON]);
+    
+#ifdef EXTENDED_FACE_MODEL
+    point2d.push_back(facialLandmarks[RIGHT_SIDE]);
+    point2d.push_back(facialLandmarks[LEFT_SIDE]);
+
+    cv::Point2f stommion = (facialLandmarks[MOUTH_CENTER_TOP] + facialLandmarks[MOUTH_CENTER_BOTTOM]) * 0.5;
+    point2d.push_back(stommion);
+#endif
+
+    // Find the 3D pose of our headprojection
+    estimateFacePoseFrom2DPoints(point2d, _rvec, _tvec, false);
+}
+
+bool FacePoseEstimator::detectFace() {    
+    static HiResTimer timer;
+    
+    // Detect the faces in the image
+    std::vector<dlib::rectangle> faceDetections = _faceDetector(_reducedSizeVideoFrame);
+    
+    if(faceDetections.size() == 0) {
+        return false;
+    }
+    
+    // Save the first detection as the face rectangle (multiply coords. by 2 because of scaled image)
+    dlib::rectangle detection = faceDetections[0];
+    faceRectangle = cv::Rect(detection.left()*2, detection.top()*2, detection.width()*2, detection.height()*2);
+    
+    return true;
+}
+
+void FacePoseEstimator::addFaceSample() {
+/*
+    // Write sample information to output files
+
+    static int counter = 0;
+    // If this is the first sample, remove previously saved files
+    if(counter == 0) {
+        boost::filesystem::path path_to_remove("./headpose");
+
+        for (boost::filesystem::directory_iterator end_dir_it, it(path_to_remove); it!=end_dir_it; ++it) {
+            boost::filesystem::remove_all(it->path());
+        }
+    }
+
+    // Write the camera image for this frame
+    cv::imwrite("./headpose/head_" + boost::lexical_cast<std::string>(counter) + ".png", Application::Components::videoInput->frame);
+
+    // Write the facial feature positions as calculated by the face pose estimator component
+    std::ofstream pointPositionsFile;
+    pointPositionsFile.open(("./headpose/head_points_" + boost::lexical_cast<std::string>(counter) + ".txt").c_str());
+
+    pointPositionsFile << facialLandmarks[SELLION].x << "\t" << facialLandmarks[SELLION].y << std::endl;
+    pointPositionsFile << facialLandmarks[RIGHT_EYE].x << "\t" << facialLandmarks[RIGHT_EYE].y << std::endl;
+    pointPositionsFile << facialLandmarks[LEFT_EYE].x << "\t" << facialLandmarks[LEFT_EYE].y << std::endl;
+    pointPositionsFile << facialLandmarks[NOSE].x << "\t" << facialLandmarks[NOSE].y << std::endl;
+    pointPositionsFile << facialLandmarks[MENTON].x << "\t" << facialLandmarks[MENTON].y << std::endl;
+
+
+    cv::Point2f stommion = (facialLandmarks[MOUTH_CENTER_TOP] + facialLandmarks[MOUTH_CENTER_BOTTOM]) * 0.5;
+    pointPositionsFile << facialLandmarks[RIGHT_SIDE].x << "\t" << facialLandmarks[RIGHT_SIDE].y << std::endl;
+    pointPositionsFile << facialLandmarks[LEFT_SIDE].x << "\t" << facialLandmarks[LEFT_SIDE].y << std::endl;
+    pointPositionsFile << stommion.x << "\t" << stommion.y << std::endl;
+    pointPositionsFile.close();
+
+    // Write the pose information (rvec and tvec)
+    std::ofstream poseFile;
+    poseFile.open(("./headpose/head_pose_" + boost::lexical_cast<std::string>(counter) + ".txt").c_str());
+    poseFile << _rvec.at<double>(0) << "\t" << _rvec.at<double>(1) << "\t" << _rvec.at<double>(2) << std::endl;
+    poseFile << _tvec.at<double>(0) << "\t" << _tvec.at<double>(1) << "\t" << _tvec.at<double>(2) << std::endl;
+    poseFile.close();
+    counter++;
+    
+    */
+    
+    // Add the facial landmark positions, rvec and tvec vectors to the corresponding vectors
+    std::vector<cv::Point2f> *facePoints = new std::vector<cv::Point2f>();
+    facePoints->push_back(cv::Point2f(facialLandmarks[SELLION].x,  facialLandmarks[SELLION].y));
+    facePoints->push_back(cv::Point2f(facialLandmarks[RIGHT_EYE].x, facialLandmarks[RIGHT_EYE].y));
+    facePoints->push_back(cv::Point2f(facialLandmarks[LEFT_EYE].x, facialLandmarks[LEFT_EYE].y));
+    facePoints->push_back(cv::Point2f(facialLandmarks[NOSE].x,     facialLandmarks[NOSE].y));
+    facePoints->push_back(cv::Point2f(facialLandmarks[MENTON].x,   facialLandmarks[MENTON].y));
+
+#ifdef EXTENDED_FACE_MODEL    
+    facePoints->push_back(cv::Point2f(facialLandmarks[RIGHT_SIDE].x,   facialLandmarks[RIGHT_SIDE].y));
+    facePoints->push_back(cv::Point2f(facialLandmarks[LEFT_SIDE].x,    facialLandmarks[LEFT_SIDE].y));
+    cv::Point2f stommion = (facialLandmarks[MOUTH_CENTER_TOP] + facialLandmarks[MOUTH_CENTER_BOTTOM]) * 0.5;
+    facePoints->push_back(cv::Point2f(stommion.x, stommion.y));
+#endif
+
+    _sampleFacePoints.push_back(*facePoints);
+    
+    cv::Mat *tempRvec = new cv::Mat();
+    _rvec.copyTo(*tempRvec);
+    _sampleRvecs.push_back(*tempRvec);
+    
+    cv::Mat *tempTvec = new cv::Mat();
+    _tvec.copyTo(*tempTvec);
+    _sampleTvecs.push_back(*tempTvec);
+    
+    std::cout << "Added face sample!!" << std::endl;
+    
+    _sampleCount++;
+    
+    // Reset coordinate descent iteration number
+    _iterationNumber = 0;
+}
+
+bool FacePoseEstimator::isActive() {
+    return _isActive;
+}
+
+void FacePoseEstimator::draw() {
+	if (!isFaceFound)
+		return;
+
+    cv::Mat image = Application::Components::videoInput->debugFrame;
+
     std::vector<cv::Point2f> detectedPoints;
 
     detectedPoints.push_back(facialLandmarks[SELLION]);
     detectedPoints.push_back(facialLandmarks[RIGHT_EYE]);
     detectedPoints.push_back(facialLandmarks[LEFT_EYE]);
+    detectedPoints.push_back(facialLandmarks[NOSE]);
+    detectedPoints.push_back(facialLandmarks[MENTON]);
+
+#ifdef EXTENDED_FACE_MODEL  
     detectedPoints.push_back(facialLandmarks[RIGHT_SIDE]);
     detectedPoints.push_back(facialLandmarks[LEFT_SIDE]);
-    detectedPoints.push_back(facialLandmarks[MENTON]);
-    detectedPoints.push_back(facialLandmarks[NOSE]);
+    cv::Point2f stommion = (facialLandmarks[MOUTH_CENTER_TOP] + facialLandmarks[MOUTH_CENTER_BOTTOM]) * 0.5;
+    detectedPoints.push_back(cv::Point2f(stommion.x, stommion.y));
+#endif
 
-    cv::Point2f stomion = (facialLandmarks[MOUTH_CENTER_TOP] + facialLandmarks[MOUTH_CENTER_BOTTOM]) * 0.5;
-    detectedPoints.push_back(stomion);
+    /*
+    // Reproject the eye region boundary points from the generic head model points to the image, and draw these on the debug image
+    std::vector<cv::Point2f> reprojectedPoints;
+    projectPoints(getUsedHeadModel(), _rvec, _tvec, reprojectedPoints);
 
-    // Find the 3D pose of our headprojection
-    cv::solvePnP(_headPoints, detectedPoints,
-            _projection, cv::noArray(),
-            _rvec, _tvec, false,
-            0);    // hardcoded value for cv::SOLVEPNP_ITERATIVE or cv::ITERATIVE (to fix problems with different versions of OpenCV)
+    for (int i=0; i<reprojectedPoints.size(); i++) {
 
-    cv::Matx33d rotation;
+        cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(reprojectedPoints[i]), 2, cv::Scalar(0,255,255), 2);
+        cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(detectedPoints[i]), 2, cv::Scalar(255,255,255), 2);
+    }
+    */
+
+    // Trying to find eye corner points
+    //cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(facialLandmarks[RIGHT_EYE]), 3, cv::Scalar(255,255,255), -1, 8, 0);
+    //cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(facialLandmarks[LEFT_EYE]), 3, cv::Scalar(255,255,255), -1, 8, 0);
+    
+    cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(rightEye), 3, cv::Scalar(0,0,255), -1, 8, 0);
+    cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(leftEye), 3, cv::Scalar(0,0,255), -1, 8, 0);
+
+
+    /*
+    cv::rectangle(image,
+                  Utils::mapFromCameraToDebugFrameCoordinates(cv::Point(faceRectangle.x, faceRectangle.y)),
+                  Utils::mapFromCameraToDebugFrameCoordinates(cv::Point(faceRectangle.x+faceRectangle.width, faceRectangle.y+faceRectangle.height)),
+                  CV_RGB(0, 255, 0), 2, 8, 0);
+*/
+    // Prepare the axes for the head pose, project it to the image and draw on the debug image
+    std::vector<cv::Point3f> axes;
+    axes.push_back(cv::Point3f(0,0,0));
+    axes.push_back(cv::Point3f(50,0,0));
+    axes.push_back(cv::Point3f(0,50,0));
+    axes.push_back(cv::Point3f(0,0,50));
+    std::vector<cv::Point2f> projectedAxes;
+
+    projectPoints(axes, _rvec, _tvec, projectedAxes);
+
+    cv::line(image, Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[0]), Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[3]), cv::Scalar(255,0,0),2,CV_AA);
+    cv::line(image, Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[0]), Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[2]), cv::Scalar(0,255,0),2,CV_AA);
+    cv::line(image, Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[0]), Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[1]), cv::Scalar(0,0,255),2,CV_AA);
+
+
+/*  cv::Matx33d rotation;
     cv::Rodrigues(_rvec, rotation);
 
     headPose(0,0) = rotation(0,0);
@@ -179,238 +328,138 @@ void FacePoseEstimator::calculatePose() {
     headPose(3,0) = 0;
     headPose(3,1) = 0;
     headPose(3,2) = 0;
-    headPose(3,3) = 1;
-    
-    /*
-    headPose = {
-        rotation(0,0),    rotation(0,1),    rotation(0,2),    _tvec.at<double>(0)/1000,
-        rotation(1,0),    rotation(1,1),    rotation(1,2),    _tvec.at<double>(1)/1000,
-        rotation(2,0),    rotation(2,1),    rotation(2,2),    _tvec.at<double>(2)/1000,
-                    0,                0,                0,                     1
-    };*/
-}
+    headPose(3,3) = 1;  */
 
-bool FacePoseEstimator::detectFace() {    
-    static HiResTimer timer;
-    
-    // Detect the faces in the image
-    //timer.start();
-    std::vector<dlib::rectangle> faceDetections = _faceDetector(_reducedSizeVideoFrame);
-    //timer.stop();
-    //std::cout << timer.getElapsedTime() << " ms passed for face detection" << std::endl;
-    
-    if(faceDetections.size() == 0) {
-        return false;
+    cv::putText(image, "("  + boost::lexical_cast<std::string>(int(_tvec.at<double>(0)/10)) + "cm, " 
+                            + boost::lexical_cast<std::string>(int(_tvec.at<double>(1)/10)) + "cm, " 
+                            + boost::lexical_cast<std::string>(int(_tvec.at<double>(2)/10)) + "cm)", 
+                Utils::mapFromCameraToDebugFrameCoordinates(facialLandmarks[SELLION]), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255),2, 8);
+
+    if(Application::Signals::useGenericFaceModel) {
+        cv::putText(image, "GENERIC MODEL", cv::Point(100, 500), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255),2, 8);
     }
-    
-    isFaceInitialized = true;
-    
-    // Use the first detection to reset the Camshift tracker
-    dlib::rectangle detection = faceDetections[0];
-    
-    resetFaceTracking(cv::Rect(detection.left()*2, detection.top()*2, detection.width()*2, detection.height()*2));
-    
-    return true;
-}
-
-void FacePoseEstimator::allocateFaceTracker() {
-    cv::Mat frame = Application::Components::videoInput->frame;
-    
-    // Initialize the image structures
-    _faceTracker.hsv.create(frame.size(), CV_8UC3);
-    _faceTracker.hue.create(frame.size(), CV_8UC1);
-    _faceTracker.mask.create(frame.size(), CV_8UC1);
-    _faceTracker.prob.create(frame.size(), CV_8UC1);
-}
-
-void FacePoseEstimator::extractHueAndMask() {
-    cv::Mat frame = Application::Components::videoInput->frame;
-    int vmin = 65, vmax = 256, smin = 55;
-    int ch[] = {0, 0};
-    
-    // Convert color to HSV
-    cv::cvtColor(frame, _faceTracker.hsv, CV_BGR2HSV);
-    
-    // Threshold the HSV image and create the mask
-    cv::inRange(_faceTracker.hsv, cv::Scalar(0, smin, vmin), cv::Scalar(180, 256, vmax), _faceTracker.mask);
-    
-    // Extract the first channel of HSV and save in hueprojection
-    cv::mixChannels(&_faceTracker.hsv, 1, &_faceTracker.hue, 1, ch, 1);
-}
-
-void FacePoseEstimator::resetFaceTracking(cv::Rect faceDetection) {
-    cv::Mat frame = Application::Components::videoInput->frame;
-    int hsize = 30;
-    float hranges[] = {0,180};
-    const float* phranges = hranges;
-    
-    extractHueAndMask();
-    
-    // Calculate the histogram features that describe the face
-    cv::Mat roi(_faceTracker.hue, faceDetection), maskroi(_faceTracker.mask, faceDetection);
-    cv::calcHist(&roi, 1, 0, maskroi, _faceTracker.hist, 1, &hsize, &phranges);
-    cv::normalize(_faceTracker.hist, _faceTracker.hist, 0, 255, cv::NORM_MINMAX);
-    
-    faceRectangle = faceDetection;
-}
-
-void FacePoseEstimator::trackFace() {
-	if (!isFaceInitialized)
-		return;
-    
-    float hranges[] = {0,180};
-    const float* phranges = hranges;
-    
-    extractHueAndMask();
-    
-    // Track the face using the Camshift algorithm
-    cv::calcBackProject(&_faceTracker.hue, 1, 0, _faceTracker.hist, _faceTracker.prob, &phranges);
-    _faceTracker.prob &= _faceTracker.mask;
-    faceRotatedRectangle = cv::CamShift(_faceTracker.prob,
-                                        faceRectangle,
-                                        cv::TermCriteria( cv::TermCriteria::EPS | cv::TermCriteria::COUNT, 10, 1 ));
-    
-    // The rotated rectangle results is stored in faceRotatedRectangle
-    // faceRectangle contains its bounding box for easy use
-    //faceRectangle = faceRotatedRectangle.boundingRect();
-    
-    /*
-    int cols = faceTracker.prob.cols, 
-        rows = faceTracker.prob.rows, 
-        r = (MIN(cols, rows) + 5)/6;
-    
-    faceRectangle = cv::Rect(faceRectangle.x - r, faceRectangle.y - r,
-                       faceRectangle.x + r, faceRectangle.y + r) &
-                    cv::Rect(0, 0, cols, rows);
-                    */
-}
-
-void FacePoseEstimator::addFaceSample() {
-    const int numPoints = 5;
-
-    cv::Mat *newSample = new cv::Mat_<double>(2, numPoints);
-
-    // Add the current facial landmarks to the sample array
-    newSample->at<double>(0, 0) = facialLandmarks[SELLION].x;
-    newSample->at<double>(0, 1) = facialLandmarks[RIGHT_EYE].x;
-    newSample->at<double>(0, 2) = facialLandmarks[LEFT_EYE].x;
-    newSample->at<double>(0, 3) = facialLandmarks[NOSE].x;
-    newSample->at<double>(0, 4) = facialLandmarks[MENTON].x;
-
-    newSample->at<double>(1, 0) = facialLandmarks[SELLION].y;
-    newSample->at<double>(1, 1) = facialLandmarks[RIGHT_EYE].y;
-    newSample->at<double>(1, 2) = facialLandmarks[LEFT_EYE].y;
-    newSample->at<double>(1, 3) = facialLandmarks[NOSE].y;
-    newSample->at<double>(1, 4) = facialLandmarks[MENTON].y;
-
-    _faceSamples.push_back(*newSample);
-
-    std::cout << "Added face sample!!" << std::endl;
-/*
-    const int nframes = static_cast<int>(_faceSamples.size());
-    std::cout << "nframes=" << nframes << std::endl;
-    for (int frame = 0; frame < nframes; ++frame) {
-        std::cout << "Checking frame " << frame << std::endl;
-      const int ntracks = _faceSamples[frame].cols;
-
-      std::cout << "ntracks=" << ntracks << std::endl;
-
-      for (int track = 0; track < ntracks; ++track) {
-          std::cout << "Checking track " << track<< std::endl;
-        const cv::Vec2d track_pt = _faceSamples[frame].col(track);
-
-        std::cout << "Vector 2D =" << track_pt<< std::endl;
-      }
-      std::cout << std::endl<< std::endl;
-    }
-*/
-    // If there are enough samples, run the structure from motion library's reconstruct function
-    if(_faceSamples.size() > 5) {
-        _facialLandmarks3d.clear();
-        _cameraRotations.clear();
-        _cameraTranslations.clear();
-
-        std::cout << "Enough samples! Trying reconstruction" << std::endl;
-        std::cout << "Here is the first landmark in 2D for all frames" << std::endl;
-
-        for(int i=0; i<_faceSamples.size(); i++)
-            std::cout << cv::Vec2d(_faceSamples[i].col(0)) << std::endl;
-
-        cv::sfm::reconstruct(_faceSamples, _cameraRotations, _cameraTranslations, _projection, _facialLandmarks3d, true);
-
-        std::cout << "3D landmarks size: " << _facialLandmarks3d.size() << std::endl;
-
-        // TODO Update the generic head model with the newly calculated 3D positions
-
-        std::cout << "Here is the same landmark in 3D" << std::endl;
-        if(_facialLandmarks3d.size() > 0)
-            std::cout << _facialLandmarks3d[0] << std::endl;
-
-        std::cout << std::endl << std::endl;
+    else {
+        cv::putText(image, "CUSTOMIZED MODEL", cv::Point(100, 500), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
     }
 
-    std::cout << std::endl;
 }
 
-bool FacePoseEstimator::isActive() {
-    return _isActive;
+// Return the used head model (either the generic one or the personalized one)
+std::vector<cv::Point3f> FacePoseEstimator::getUsedHeadModel() {
+    if(Application::Signals::useGenericFaceModel)
+        return _genericHeadModel;
+    else
+        return _headModel;
 }
 
-void FacePoseEstimator::draw() {
-	if (!isFaceInitialized)
-		return;
-
-    cv::Mat image = Application::Components::videoInput->debugFrame;
-/*
-    std::vector<cv::Point2f> detectedPoints;
-
-    detectedPoints.push_back(facialLandmarks[SELLION]);
-    detectedPoints.push_back(facialLandmarks[RIGHT_EYE]);
-    detectedPoints.push_back(facialLandmarks[LEFT_EYE]);
-    detectedPoints.push_back(facialLandmarks[RIGHT_SIDE]);
-    detectedPoints.push_back(facialLandmarks[LEFT_SIDE]);
-    detectedPoints.push_back(facialLandmarks[MENTON]);
-    detectedPoints.push_back(facialLandmarks[NOSE]);
-
-
-    // Reproject the eye region boundary points from the generic head model points to the image, and draw these on the debug image
-    std::vector<cv::Point2f> reprojectedPoints;
-
-    cv::projectPoints(headPoints, rvec, tvec, projection, cv::noArray(), reprojectedPoints);
-
-    for (int i=0; i<reprojectedPoints.size(); i++) {
-
-        cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(reprojectedPoints[i]), 2, cv::Scalar(0,255,255), 2);
-        cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(detectedPoints[i]), 2, cv::Scalar(255,255,255), 2);
+// One iteration of coordinate descent
+void FacePoseEstimator::coordinateDescentIteration() {
+    double stepSize = 0.00001;
+    
+    // After many iterations, use a smaller step size
+    if(_iterationNumber > 1000) {
+        stepSize /= 10;
     }
-*/
+    
+    // Iterate over the parameters
+    for(int i=0; i<NUM_PERSONAL_PARAMETERS; i++) {
+        // Calculate derivative for the parameter
+        double derivative = calculateDerivative(i);
+        //std::cout << "Derivative of par. index " << i << " is " << derivative << std::endl; 
+        
+        // Update the parameter's value
+        _parameters[i] += stepSize*derivative;
 
-    // Trying to find eye corner points
-    cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(facialLandmarks[RIGHT_EYE]), 3, cv::Scalar(255,255,255), -1, 8, 0);
-    cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(facialLandmarks[LEFT_EYE]), 3, cv::Scalar(255,255,255), -1, 8, 0);
+        // Update the 3D head model with the new parameters
+        calculateHeadModel(_parameters, _headModel);
+    }
+    
+    // Update the rvec and tvec vectors for all samples using the updated 3D head model
+    for(int i=0; i<_sampleCount; i++) {
+        estimateFacePoseFrom2DPoints(_sampleFacePoints[i], _sampleRvecs[i], _sampleTvecs[i], true);
+    }
+    
+    //std::cout << "Iteration #"<< _iterationNumber << ", avg. error = " << calculateProjectionErrors(_headModel) << std::endl;
+    
+    _iterationNumber++;
+}
 
+// Calculate the derivative for the parameter at the given index
+double FacePoseEstimator::calculateDerivative(int parameterIndex) {
+    std::vector<double> modifiedParameters = _parameters;
+    std::vector<cv::Point3f> modifiedHeadModel;
 
-    /*
-    cv::rectangle(image,
-                  Utils::mapFromCameraToDebugFrameCoordinates(cv::Point(faceRectangle.x, faceRectangle.y)),
-                  Utils::mapFromCameraToDebugFrameCoordinates(cv::Point(faceRectangle.x+faceRectangle.width, faceRectangle.y+faceRectangle.height)),
-                  CV_RGB(0, 255, 0), 2, 8, 0);
-*/
-    // Prepare the axes for the head pose, project it to the image and draw on the debug image
-    std::vector<cv::Point3f> axes;
-    axes.push_back(cv::Point3f(0,0,0));
-    axes.push_back(cv::Point3f(50,0,0));
-    axes.push_back(cv::Point3f(0,50,0));
-    axes.push_back(cv::Point3f(0,0,50));
-    std::vector<cv::Point2f> projectedAxes;
+    // Change value of parameter a little
+    modifiedParameters[parameterIndex] += 1.0e-5;
 
-    projectPoints(axes, _rvec, _tvec, _projection, cv::noArray(), projectedAxes);
+    // Get model corresponding to modifiedParameters
+    calculateHeadModel(modifiedParameters, modifiedHeadModel);
+    
+    // Calculate the change in error metric
+    double errorBefore = calculateProjectionErrors(_headModel);
+    double errorAfter = calculateProjectionErrors(modifiedHeadModel);
+    
+    return (errorBefore - errorAfter)*1.0e+5;
+}
 
-    cv::line(image, Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[0]), Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[3]), cv::Scalar(255,0,0),2,CV_AA);
-    cv::line(image, Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[0]), Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[2]), cv::Scalar(0,255,0),2,CV_AA);
-    cv::line(image, Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[0]), Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[1]), cv::Scalar(0,0,255),2,CV_AA);
+// Calculate the head model using the given parameters
+void FacePoseEstimator::calculateHeadModel(const std::vector<double> parameters, std::vector<cv::Point3f> &headModel) {
+    headModel.clear();
 
-    cv::putText(image, "(" + boost::lexical_cast<std::string>(int(headPose(0,3) * 100)) + "cm, " + boost::lexical_cast<std::string>(int(headPose(1,3) * 100)) + "cm, " + boost::lexical_cast<std::string>(int(headPose(2,3) * 100)) + "cm)", Utils::mapFromCameraToDebugFrameCoordinates(facialLandmarks[SELLION]), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255),2, 8);
+    // Sellion
+    headModel.push_back(cv::Point3f(0., 0.,0.));
 
+    // Right and left eyes
+    headModel.push_back(cv::Point3f(parameters[PAR_EYE_DEPTH]*-20., parameters[PAR_EYE_SEPARATION]*-65,-5.));
+    headModel.push_back(cv::Point3f(parameters[PAR_EYE_DEPTH]*-20., parameters[PAR_EYE_SEPARATION]*+65,-5.));
 
+    // Nose
+    headModel.push_back(cv::Point3f(parameters[PAR_NOSE_DEPTH]*21.0, 0., parameters[PAR_NOSE_LENGTH]*-46.0));
+
+    // Menton
+    headModel.push_back(cv::Point3f(0., 0.,parameters[PAR_MENTON_LENGTH]*-128.5));
+
+#ifdef EXTENDED_FACE_MODEL
+    // Right and left ears
+    headModel.push_back(cv::Point3f(parameters[PAR_EAR_DEPTH]*-100., parameters[PAR_EAR_SEPARATION]*-74.5,-6.));
+    headModel.push_back(cv::Point3f(parameters[PAR_EAR_DEPTH]*-100., parameters[PAR_EAR_SEPARATION]*+74.5,-6.));
+
+    // Stommion
+    headModel.push_back(cv::Point3f(parameters[PAR_STOMMION_DEPTH]*10.0, 0., parameters[PAR_STOMMION_LENGTH]*-73.0));
+#endif
+}
+
+// Calculates the average projection error using the given 3D head model
+double FacePoseEstimator::calculateProjectionErrors(const std::vector<cv::Point3f> model) {
+    std::vector<cv::Point2f> projectedPoints;
+    double reprojectionErrors = 0;
+    
+    // Iterate over face samples
+    for(int i=0; i<_sampleCount; i++) {
+        // Reproject the head model using this sample's rvec and tvec
+        projectPoints(model, _sampleRvecs[i], _sampleTvecs[i], projectedPoints);
+        
+        
+        // Accumulate projection errors
+        for(int j=0; j<projectedPoints.size(); j++) {
+            reprojectionErrors += cv::norm(projectedPoints[j]-_sampleFacePoints[i][j]);
+        }
+    }
+
+    // Return average reprojection error
+    return reprojectionErrors/_sampleCount;
+}
+
+// Projects the given 3D model using the provided rotation and translation vectors
+void FacePoseEstimator::projectPoints(const std::vector<cv::Point3f> model, const cv::Mat rvec, const cv::Mat tvec, std::vector<cv::Point2f> &projectedPoints) {
+    cv::projectPoints(model, rvec, tvec, _projection, cv::noArray(), projectedPoints);
+}
+
+// Estimates the rvec and tvec vectors using the calculated _headModel and given facePoints (2d pixel positions on the image)
+void FacePoseEstimator::estimateFacePoseFrom2DPoints(const std::vector<cv::Point2f> facePoints, cv::Mat &rvec, cv::Mat &tvec, bool useExtrinsicGuess) {
+    cv::solvePnP(getUsedHeadModel(), facePoints,
+            _projection, cv::noArray(),
+            rvec, tvec, useExtrinsicGuess,
+            1);    // Hardcoded value for cv::SOLVEPNP_EPNP or CV_EPNP (to fix problems with different versions of OpenCV)
+//            0);    // Hardcoded value for cv::SOLVEPNP_ITERATIVE or CV_ITERATIVE (to fix problems with different versions of OpenCV)   
 }

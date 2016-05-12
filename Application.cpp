@@ -44,6 +44,7 @@ namespace Application {
 		int initiatePointSelectionFrameNo = -1;
 		int initiatePointClearingFrameNo = -1;
         bool addFaceSample = false;
+		bool useGenericFaceModel = false;
 	}
 
 	namespace Data {

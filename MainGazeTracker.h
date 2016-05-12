@@ -33,6 +33,7 @@ public slots:
 	void choosePoints();
 	void clearPoints();
     void addFaceSample();
+	void switchFaceModel();
 	
 private:
 	std::vector<boost::shared_ptr<AbstractStore> > _stores;
