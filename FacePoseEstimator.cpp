@@ -14,6 +14,7 @@
 #include "HiResTimer.h"
 
 #include <iostream>
+#include <cmath>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
 
@@ -115,7 +116,7 @@ void FacePoseEstimator::process() {
         projectPoints(getUsedHeadModel(), _rvec, _tvec, eyeCornerProjections);
         
         // Smooth the estimation a little bit
-        double alpha = 0; //0.3;    DISABLED SMOOTHING FOR NOW
+        double alpha = 0.3;//    DISABLED SMOOTHING FOR NOW
         rightEye.x = (alpha)*rightEye.x + (1-alpha)*eyeCornerProjections[1].x;
         rightEye.y = (alpha)*rightEye.y + (1-alpha)*eyeCornerProjections[1].y;
         
@@ -341,6 +342,13 @@ void FacePoseEstimator::draw() {
     else {
         cv::putText(image, "CUSTOMIZED MODEL", cv::Point(100, 500), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
     }
+    
+    cv::Vec3d rotationAngles = getEulerAngles(_rvec);
+    
+    cv::putText(image, "ROTATIONS: ("  + boost::lexical_cast<std::string>(int(rotationAngles[0])) + ", " 
+                            + boost::lexical_cast<std::string>(int(rotationAngles[1])) + ", " 
+                            + boost::lexical_cast<std::string>(int(rotationAngles[2])) + ")",
+            cv::Point(100, 800), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
 
 }
 
@@ -462,4 +470,28 @@ void FacePoseEstimator::estimateFacePoseFrom2DPoints(const std::vector<cv::Point
             rvec, tvec, useExtrinsicGuess,
             1);    // Hardcoded value for cv::SOLVEPNP_EPNP or CV_EPNP (to fix problems with different versions of OpenCV)
 //            0);    // Hardcoded value for cv::SOLVEPNP_ITERATIVE or CV_ITERATIVE (to fix problems with different versions of OpenCV)   
+}
+
+// Function to get the Euler angles (yaw, pitch, roll) from the OpenCV rotation matrix
+cv::Vec3d FacePoseEstimator::getEulerAngles(cv::Mat rotationVector) {
+    cv::Vec3d eulerAngles;
+    
+    // Convert the rotation vector to rotation matrix
+    cv::Mat rotationMatrix;
+    cv::Rodrigues(rotationVector, rotationMatrix);
+    
+    //cv::Matx33f rotation_matrix = rotationMatrix;
+    cv::Mat faceAxes = cv::Mat::eye(3, 3, CV_64FC1);
+    cv::Mat rotatedAxes = rotationMatrix*faceAxes;
+
+    // Face axes (3 unit vectors in each axis)     
+    double yaw = (180/M_PI)*atan2(rotatedAxes.at<double>(0, 0), -rotatedAxes.at<double>(2, 0));
+    double pitch = (180/M_PI)*atan2(rotatedAxes.at<double>(1, 0), -rotatedAxes.at<double>(2, 0));
+    double roll = (180/M_PI)*atan2(rotatedAxes.at<double>(0, 2), -rotatedAxes.at<double>(1, 2));
+    
+    eulerAngles[0] = yaw;
+    eulerAngles[1] = pitch;
+    eulerAngles[2] = roll;
+    
+    return eulerAngles;
 }

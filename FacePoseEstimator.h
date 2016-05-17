@@ -130,4 +130,5 @@ private:
     void projectPoints(const std::vector<cv::Point3f> model, const cv::Mat rvec, const cv::Mat tvec, std::vector<cv::Point2f> &projectedPoints);
     void estimateFacePoseFrom2DPoints(const std::vector<cv::Point2f> facePoints, cv::Mat &rvec, cv::Mat &tvec, bool useExtrinsicGuess);
     std::vector<cv::Point3f> getUsedHeadModel();
+    cv::Vec3d getEulerAngles(cv::Mat rotationVector);
 };
