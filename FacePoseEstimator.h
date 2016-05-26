@@ -87,7 +87,6 @@ public:
 	void process();
 	void draw();
     bool isActive();
-    void addFaceSample();
 	
     bool isFaceFound;
 	cv::Rect faceRectangle;
@@ -111,9 +110,11 @@ private:
     std::vector<cv::Point3f> _eyeRegionPoints;
 
     int _sampleCount;
+    int _lastSampleFrame;
     std::vector< std::vector<cv::Point2f> > _sampleFacePoints;
     std::vector<cv::Mat> _sampleRvecs;
     std::vector<cv::Mat> _sampleTvecs;
+    std::vector<cv::Vec3d> _sampleHeadPoseAngles;
     std::vector<cv::Mat> _facialLandmarks3d;
 
     // Variables for coordinate descent
@@ -122,6 +123,8 @@ private:
     
     bool detectFace();
     void estimateFacePose();
+    bool shouldAddFaceSample();
+    void addFaceSample();
     
     void coordinateDescentIteration();
     double calculateDerivative(int parameterIndex);

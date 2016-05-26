@@ -11,13 +11,13 @@
 using Utils::operator<<;
 using Utils::operator>>;
 
-static Point pointBetweenRects(const Point &point, cv::Rect source, cv::Rect dest) {
-	return Point((point.x - source.x) * (double(dest.width) / source.width) + dest.x,
+static cv::Point pointBetweenRects(const cv::Point &point, cv::Rect source, cv::Rect dest) {
+	return cv::Point((point.x - source.x) * (double(dest.width) / source.width) + dest.x,
 		(point.y - source.y) * (double(dest.height) / source.height) + dest.y);
 }
 
-static std::vector<Point> pointBetweenRects(const std::vector<Point> &points, cv::Rect source, cv::Rect dest) {
-	std::vector<Point> result;
+static std::vector<cv::Point> pointBetweenRects(const std::vector<cv::Point> &points, cv::Rect source, cv::Rect dest) {
+	std::vector<cv::Point> result;
 	result.reserve(points.size());
 
 	xForEach(iter, points) {
@@ -59,11 +59,7 @@ void PointTracker::track() {
 		status.resize(currentPoints.size());
 
         cvtColor(Application::Components::videoInput->frame, grey, CV_BGR2GRAY);
-/*
-		if (Application::faceRectangle != NULL) {
-			Utils::normalizeGrayScaleImage_NEW(grey(*Application::faceRectangle), 90, 160);
-		}
-*/
+		
         // Apply median filter of 5x5
         //medianBlur(grey, grey, 5);    // COMMENTED OUT BECAUSE IT STARTED BEING TOO SLOW ON OPENCV 3.1
 
@@ -144,13 +140,6 @@ void PointTracker::retrack() {
 			Application::Data::anchorPoints[i].x = currentPoints[i].x;
 			Application::Data::anchorPoints[i].y = currentPoints[i].y;
 		}
-        
-		/*
-        std::cout << std::endl << "AFTER RETRACKING" << std::endl;
-		for (int i = 0; i < (int)currentPoints.size(); i++) {
-			std::cout << "CP["<< i <<"]" << currentPoints[i].x << ", " << currentPoints[i].y << std::endl;
-		}
-        */
 	}
 	catch (std::exception &ex) {
 		std::cout << ex.what() << std::endl;
@@ -170,11 +159,11 @@ int PointTracker::pointCount() {
 	return currentPoints.size();
 }
 
-std::vector<Point> PointTracker::getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints) {
-	std::vector<Point> vec;
+std::vector<cv::Point> PointTracker::getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints) {
+	std::vector<cv::Point> vec;
 	for (int i = 0; i < pointCount(); i++) {
 		if (allPoints || status[i]) {
-			vec.push_back(Point((this->*points)[i].x, (this->*points)[i].y));
+			vec.push_back(cv::Point((this->*points)[i].x, (this->*points)[i].y));
 		}
 	}
 	return vec;

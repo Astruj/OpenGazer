@@ -42,7 +42,7 @@ namespace Utils {
 		//return new cv::Rect(0, 0, 1280, 720);
 	}
 
-	void mapToFirstMonitorCoordinates(Point monitor2Point, Point &monitor1Point) {
+	void mapToFirstMonitorCoordinates(cv::Point monitor2Point, cv::Point &monitor1Point) {
 		cv::Rect *monitor1Geometry = Utils::getFirstMonitorGeometry();
 		cv::Rect *monitor2Geometry = Utils::getSecondMonitorGeometry();
 
@@ -64,7 +64,7 @@ namespace Utils {
 		return cv::Point(xFactor*point.x, yFactor*point.y);
 	}
 
-	void boundToScreenArea(Point &estimate) {
+	void boundToScreenArea(cv::Point &estimate) {
 		cv::Rect *rect = Utils::getSecondMonitorGeometry();
 
 		// If x or y coordinates are outside screen boundaries, correct them
@@ -86,7 +86,7 @@ namespace Utils {
 	}
 
 
-	void mapToVideoCoordinates(Point monitor2Point, double resolution, Point &videoPoint, bool reverseX) {
+	void mapToVideoCoordinates(cv::Point monitor2Point, double resolution, cv::Point &videoPoint, bool reverseX) {
 		cv::Rect *monitor1Geometry = new cv::Rect(0, 0, 1280, 720);
 		cv::Rect *monitor2Geometry = Utils::getSecondMonitorGeometry();
 
@@ -108,7 +108,7 @@ namespace Utils {
 	}
 
 	// Neural network
-	void mapToNeuralNetworkCoordinates(Point point, Point &nnPoint) {
+	void mapToNeuralNetworkCoordinates(cv::Point point, cv::Point &nnPoint) {
 		cv::Rect *monitor1Geometry = new cv::Rect(0, 0, 1, 1);
 		cv::Rect *monitor2Geometry = Utils::getSecondMonitorGeometry();
 
@@ -119,7 +119,7 @@ namespace Utils {
 	}
 
 
-	void mapFromNeuralNetworkToScreenCoordinates(Point nnPoint, Point &point) {
+	void mapFromNeuralNetworkToScreenCoordinates(cv::Point nnPoint, cv::Point &point) {
 		cv::Rect *monitor1Geometry = Utils::getSecondMonitorGeometry();
 		cv::Rect *monitor2Geometry = new cv::Rect(0, 0, 1, 1);
 
@@ -175,14 +175,10 @@ namespace Utils {
 	}
 
 
-	std::vector<Point> readAndScalePoints(std::ifstream &in) {
+	std::vector<cv::Point> readAndScalePoints(std::ifstream &in) {
 		cv::Rect *rect = getSecondMonitorGeometry();
-
-		return scaled(loadPoints(in), rect->width, rect->height);
-	}
-
-	std::vector<Point> loadPoints(std::ifstream &in) {
-		std::vector<Point> result;
+		
+		std::vector<cv::Point> result;
 
 		for(;;) {
 			double x, y;
@@ -191,17 +187,8 @@ namespace Utils {
 				// break if any error
 				break;
 			}
-			result.push_back(Point(x, y));
-		}
-
-		return result;
-	}
-
-	std::vector<Point> scaled(const std::vector<Point> &points, double x, double y) {
-		std::vector<Point> result;
-
-		xForEach(iter, points) {
-			result.push_back(Point(iter->x * x, iter->y * y));
+			std::cout << "Read point: " << x << ", " << y << std::endl;
+			result.push_back(cv::Point(x*rect->width, y*rect->height));
 		}
 
 		return result;

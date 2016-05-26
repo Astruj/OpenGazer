@@ -7,7 +7,6 @@
 
 #include "PointTracker.h"
 #include "GazeTracker.h"
-#include "HeadTracker.h"
 #include "EyeCenterDetector.h"
 #include "FacePoseEstimator.h"
 #include "HistogramFeatureExtractor.h"
@@ -240,7 +239,6 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
     addComponent("EyeCenterDetector", new EyeCenterDetector());
     addComponent("EyeExtractor", new EyeExtractor());
     addComponent("FacePoseEstimator", new FacePoseEstimator());
-    addComponent("HeadTracker", new HeadTracker());
     addComponent("HistogramFeatureExtractor", new HistogramFeatureExtractor());
     addComponent("PointTracker", new PointTracker());
     addComponent("PointTrackerWithTemplate", new PointTrackerWithTemplate());
@@ -257,12 +255,12 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 
 	// Read calibration target list and create the calibrator object
 	std::ifstream calibrationTargetFile((_directory + "/calpoints.txt").c_str());
-	std::vector<Point> calibrationTargets = Utils::readAndScalePoints(calibrationTargetFile);
+	std::vector<cv::Point> calibrationTargets = Utils::readAndScalePoints(calibrationTargetFile);
 	Application::Components::calibrator = new Calibrator(calibrationTargets);
 
 	// Read test target list and create the test window object
 	std::ifstream testTargetFile((_directory + "/testpoints.txt").c_str());
-	std::vector<Point> testTargets = Utils::readAndScalePoints(testTargetFile);
+	std::vector<cv::Point> testTargets = Utils::readAndScalePoints(testTargetFile);
 	Application::Components::testWindow = new TestWindow(testTargets);
     
     // Create the debug window
@@ -272,7 +270,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
     
     // Add gaze point output variables for each gaze component
     for (int i=0; i<Application::config.gaze_components.size(); i++){
-        Application::Data::gazePoints.push_back(Point(0, 0));
+        Application::Data::gazePoints.push_back(cv::Point(0, 0));
     }
 
 	// Create timer for initiating main loop
@@ -536,7 +534,7 @@ Component* MainGazeTracker::getComponent(std::string name) {
     return Application::components[name];
 }
 
-void MainGazeTracker::calculateError(Point estimation, Point target, double &errorHorizontal, double &errorVertical, double &errorCombined) {
+void MainGazeTracker::calculateError(cv::Point estimation, cv::Point target, double &errorHorizontal, double &errorVertical, double &errorCombined) {
     // Hardcoded width and height for the monitor for which to calculate the angular errors
     double monitorWidthInCm = 53.15;
     double monitorHeightInCm = 29.89;
@@ -548,7 +546,7 @@ void MainGazeTracker::calculateError(Point estimation, Point target, double &err
     double verticalConversionFactor  = monitorHeightInCm / geometry->height;
     
     // Center point for the main (second) monitor
-    Point centerPoint(geometry->width/2, geometry->height/2);
+    cv::Point centerPoint(geometry->width/2, geometry->height/2);
     
     // Calculate errors in both directions separately
     // Angular error is: absolute difference between estimation angle and target angle

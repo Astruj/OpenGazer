@@ -24,11 +24,11 @@ public:
 private:
 	std::vector<Utils::SharedImage> _calibrationTargetImages;
 	std::vector<Utils::SharedImage> _calibrationTargetImagesLeft;
-	std::vector<Point> _calibrationTargetPoints;
+	std::vector<cv::Point> _calibrationTargetPoints;
 
 	std::vector<Utils::SharedImage> _calibrationTargetImagesAllFrames;
 	std::vector<Utils::SharedImage> _calibrationTargetImagesLeftAllFrames;
-	std::vector<Point> _calibrationTargetPointsAllFrames;
+	std::vector<cv::Point> _calibrationTargetPointsAllFrames;
 
 	boost::scoped_ptr<ImProcess> _gaussianProcessX, _gaussianProcessY;
 	boost::scoped_ptr<ImProcess> _gaussianProcessXLeft, _gaussianProcessYLeft;

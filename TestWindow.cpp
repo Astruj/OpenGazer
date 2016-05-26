@@ -1,7 +1,7 @@
 #include "TestWindow.h"
 #include "Application.h"
 
-TestWindow::TestWindow(const std::vector<Point> &points) : 
+TestWindow::TestWindow(const std::vector<cv::Point> &points) : 
 	_window(2, false)	// Create this window in the second screen
 {
 	_points = points;
@@ -47,7 +47,7 @@ void TestWindow::start() {
 // Displays the next target on screen
 void TestWindow::pointStart() {
 	// Get the current target
-	Point target = getActivePoint();
+	cv::Point target = getActivePoint();
 	
 	// Calculate bounds for copying target image to screen image
 	cv::Rect targetBounds = cv::Rect(0, 0, _targetImage.size().width, _targetImage.size().height);
@@ -100,11 +100,11 @@ bool TestWindow::isActive() {
 }
 
 // Returns current point's coordinates
-Point TestWindow::getActivePoint() {
+cv::Point TestWindow::getActivePoint() {
 	if(isActive())
 		return _points[getPointNumber()];
 	else
-		return Point(-1, -1);
+		return cv::Point(-1, -1);
 }
 
 // Returns the index of current point
@@ -142,10 +142,10 @@ bool TestWindow::shouldStartNextPoint() {
 
 void TestWindow::draw() {
 	if(isActive()) {
-		Point activePoint = getActivePoint();
+		cv::Point activePoint = getActivePoint();
 		
 		cv::circle(Application::Components::videoInput->debugFrame, 
-				Utils::mapFromSecondMonitorToDebugFrameCoordinates(cv::Point(activePoint.x, activePoint.y)), 
+				Utils::mapFromSecondMonitorToDebugFrameCoordinates(activePoint), 
 				8, cv::Scalar(0, 0, 255), -1, 8, 0);
 	}
 }

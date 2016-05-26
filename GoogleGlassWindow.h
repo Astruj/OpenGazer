@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ImageWindow.h"
-#include "Point.h"
 #include "Component.h"
 
 #define picturesX 3

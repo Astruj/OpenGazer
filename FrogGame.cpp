@@ -68,18 +68,20 @@ void FrogGame::process() {
 		return;
 	}
 	
-    Point mappedEstimation;
-    Utils::mapToFirstMonitorCoordinates(Application::Data::gazePoints[0], mappedEstimation);
-    
-	int lastEstimationX = mappedEstimation.x;
-	int lastEstimationY = mappedEstimation.y;
-
+	
+	cv::Point estimation = Application::Data::gazePoints[0] + Application::Data::headPoseCorrection;
+    cv::Point mappedEstimation;
+	
+    Utils::mapToFirstMonitorCoordinates(estimation, mappedEstimation);
+	
 	//const int width = _backgroundWithFrog.size().width;
 	//const int height = _backgroundWithFrog.size().height;
 
 	double alpha = 0.6;
-	estimationXRunningAverage = (1 - alpha) * lastEstimationX + alpha * estimationXRunningAverage;
-	estimationYRunningAverage = (1 - alpha) * lastEstimationY + alpha * estimationYRunningAverage;
+	estimationXRunningAverage = (1 - alpha) * mappedEstimation.x + alpha * estimationXRunningAverage;
+	estimationYRunningAverage = (1 - alpha) * mappedEstimation.y + alpha * estimationYRunningAverage;
+	
+	
 
 	// Determine the bounds to copy the corresponding area (under the gazepoint) to the screen
 	cv::Rect bounds = cv::Rect(estimationXRunningAverage - _gaussianMask.size().width/2, 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Point.h"
-
 class Component {
 public:
     Component() {}
@@ -24,7 +22,7 @@ public:
     GazeTrackerComponent() {}
     ~GazeTrackerComponent() {}
     
-    Point gazePoint;
+    cv::Point gazePoint;
     
     void clear() {
     }

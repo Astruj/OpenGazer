@@ -3,8 +3,6 @@
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 
-#include "Point.h"
-
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QMainWindow>
@@ -122,24 +120,22 @@ namespace Utils {
 	cv::Rect* getSecondMonitorGeometry();
 	cv::Rect* getFirstMonitorGeometry();
 	
-	void mapToFirstMonitorCoordinates(Point monitor2Point, Point &monitor1Point);
+	void mapToFirstMonitorCoordinates(cv::Point monitor2Point, cv::Point &monitor1Point);
 	cv::Point mapFromCameraToDebugFrameCoordinates(cv::Point point);
 	cv::Point mapFromSecondMonitorToDebugFrameCoordinates(cv::Point point);
 	
-	void mapToVideoCoordinates(Point monitor2Point, double resolution, Point &videoPoint, bool reverseX=true);
-	void mapToNeuralNetworkCoordinates(Point point, Point &nnPoint);
-	void mapFromNeuralNetworkToScreenCoordinates(Point nnPoint, Point &point);
+	void mapToVideoCoordinates(cv::Point monitor2Point, double resolution, cv::Point &videoPoint, bool reverseX=true);
+	void mapToNeuralNetworkCoordinates(cv::Point point, cv::Point &nnPoint);
+	void mapFromNeuralNetworkToScreenCoordinates(cv::Point nnPoint, cv::Point &point);
 
-	void boundToScreenArea(Point &estimate);
+	void boundToScreenArea(cv::Point &estimate);
 	
 	std::string getUniqueFileName(std::string directory, std::string baseFileName);
 	std::string getParameter(std::string name);
 	double getParameterAsDouble(std::string name, double defaultValue=0.0);
 	
 	// Functions for reading calibration and testing targets
-	std::vector<Point> readAndScalePoints(std::ifstream &in);
-	std::vector<Point> loadPoints(std::ifstream &in);
-	std::vector<Point> scaled(const std::vector<Point> &points, double x, double y);
+	std::vector<cv::Point> readAndScalePoints(std::ifstream &in);
 	
 	void normalizeGrayScaleImage(cv::Mat *image, double standardMean=127, double standardStd=50);
 	//void normalizeGrayScaleImage2(cv::Mat *image, double standardMean=127, double standardStd=50);

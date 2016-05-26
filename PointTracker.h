@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Point.h"
 #include "Component.h"
 
 #include <boost/scoped_ptr.hpp>
@@ -24,7 +23,7 @@ public:
 	int countActivePoints();
 	bool areAllPointsActive();
 	int pointCount();
-	std::vector<Point> getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints=true);
+	std::vector<cv::Point> getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints=true);
 	void draw();
 	void normalizeOriginalGrey();
 

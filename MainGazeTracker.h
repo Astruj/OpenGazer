@@ -56,6 +56,6 @@ private:
     HiResTimer performanceTimer;
     
     void addComponent(std::string name, Component *component);
-    void calculateError(Point estimation, Point target, double &errorHorizontal, double &errorVertical, double &errorCombined);
+    void calculateError(cv::Point estimation, cv::Point target, double &errorHorizontal, double &errorVertical, double &errorCombined);
 };
 

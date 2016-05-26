@@ -68,10 +68,13 @@ namespace Application {
 	}
 
 	namespace Data {
-		extern std::vector<Point> calibrationTargets;
+		extern std::vector<cv::Point> calibrationTargets;
 
 		// Outputs for all gaze estimators
-        extern std::vector<Point> gazePoints;
+        extern std::vector<cv::Point> gazePoints;
+		
+		// Gaze estimation correction due to head pose change
+		extern cv::Point headPoseCorrection;
         
         // Positions of facial anchor points
         extern std::vector<cv::Point2f> anchorPoints;

@@ -1,12 +1,12 @@
 #include "Calibrator.h"
 #include "Application.h"
 
-Calibrator::Calibrator(const std::vector<Point> &points) :
+Calibrator::Calibrator(const std::vector<cv::Point> &points) :
     _window(2, false)	// Create this window in the second screen
 {
 	_points = points;
-    
-    // Clear gaze tracker components' calibration info
+	
+	// Clear gaze tracker components' calibration info
     for (int i=0; i<Application::config.gaze_components.size(); i++){
         GazeTrackerComponent* comp = (GazeTrackerComponent*) Application::getComponent(Application::config.gaze_components[i]);
         comp->clear();
@@ -62,7 +62,7 @@ void Calibrator::start() {
 // Displays the next target on screen
 void Calibrator::pointStart() {
 	// Get the current target
-	Point target = getActivePoint();
+	cv::Point target = getActivePoint();
 	
 	// Calculate bounds for copying target image to screen image
 	cv::Rect targetBounds = cv::Rect(0, 0, _targetImage.size().width, _targetImage.size().height);
@@ -121,11 +121,11 @@ bool Calibrator::isActive() {
 }
 
 // Returns current point's coordinates
-Point Calibrator::getActivePoint() {
+cv::Point Calibrator::getActivePoint() {
 	if(isActive())
 		return _points[getPointNumber()];
 	else
-		return Point(-1, -1);
+		return cv::Point(-1, -1);
 }
 
 // Returns the index of current point
@@ -163,10 +163,11 @@ bool Calibrator::shouldStartNextPoint() {
 
 void Calibrator::draw() {
 	if(isActive()) {
-		Point activePoint = getActivePoint();
+		cv::Point activePoint = getActivePoint();
+		std::cout << "Active point is: " << activePoint.x << ", " << activePoint.y << std::endl;
 		
 		cv::circle(Application::Components::videoInput->debugFrame, 
-				Utils::mapFromSecondMonitorToDebugFrameCoordinates(cv::Point(activePoint.x, activePoint.y)), 
+				Utils::mapFromSecondMonitorToDebugFrameCoordinates(activePoint), 
 				8, cv::Scalar(0, 0, 255), -1, 8, 0);
 	}
 }

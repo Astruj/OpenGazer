@@ -24,10 +24,12 @@
 
 // TODO UPDATE FOCAL LENGTH (FROM CAMERA CALIBRATION)
 #define FOCAL_LENGTH 685
+#define PIXEL_WIDTH 0.2768  // Pixel width in mm, used in correcting for the headpose change 
 
 FacePoseEstimator::FacePoseEstimator() :
     isFaceFound(false),
-    _isActive(false)
+    _isActive(false),
+    _lastSampleFrame(50)
 {
     // Load the pretrained shape predictor
     // The file can be downloaded from
@@ -94,9 +96,10 @@ void FacePoseEstimator::process() {
         Application::Data::isTrackingSuccessful = true;
         estimateFacePose();
 
-        // If there was a mouse click on the debug window
+        // If there was a mouse click on the debug window,
+        // or if the current head pose is different enough (compared to previously added samples),
         // Add another sample for the calculation of the face structure
-        if(Application::Signals::addFaceSample) {
+        if(Application::Signals::addFaceSample || shouldAddFaceSample()) {
             addFaceSample();
             Application::Signals::addFaceSample = false;
         }
@@ -165,50 +168,42 @@ bool FacePoseEstimator::detectFace() {
     return true;
 }
 
-void FacePoseEstimator::addFaceSample() {
-/*
-    // Write sample information to output files
-
-    static int counter = 0;
-    // If this is the first sample, remove previously saved files
-    if(counter == 0) {
-        boost::filesystem::path path_to_remove("./headpose");
-
-        for (boost::filesystem::directory_iterator end_dir_it, it(path_to_remove); it!=end_dir_it; ++it) {
-            boost::filesystem::remove_all(it->path());
-        }
+bool FacePoseEstimator::shouldAddFaceSample() {
+    double minDifference = 10000;
+    
+    // If there a sample was added recently, wait a little (10 frames)
+    if(Application::Components::videoInput->frameCount < _lastSampleFrame+10) {
+        return false;
     }
-
-    // Write the camera image for this frame
-    cv::imwrite("./headpose/head_" + boost::lexical_cast<std::string>(counter) + ".png", Application::Components::videoInput->frame);
-
-    // Write the facial feature positions as calculated by the face pose estimator component
-    std::ofstream pointPositionsFile;
-    pointPositionsFile.open(("./headpose/head_points_" + boost::lexical_cast<std::string>(counter) + ".txt").c_str());
-
-    pointPositionsFile << facialLandmarks[SELLION].x << "\t" << facialLandmarks[SELLION].y << std::endl;
-    pointPositionsFile << facialLandmarks[RIGHT_EYE].x << "\t" << facialLandmarks[RIGHT_EYE].y << std::endl;
-    pointPositionsFile << facialLandmarks[LEFT_EYE].x << "\t" << facialLandmarks[LEFT_EYE].y << std::endl;
-    pointPositionsFile << facialLandmarks[NOSE].x << "\t" << facialLandmarks[NOSE].y << std::endl;
-    pointPositionsFile << facialLandmarks[MENTON].x << "\t" << facialLandmarks[MENTON].y << std::endl;
-
-
-    cv::Point2f stommion = (facialLandmarks[MOUTH_CENTER_TOP] + facialLandmarks[MOUTH_CENTER_BOTTOM]) * 0.5;
-    pointPositionsFile << facialLandmarks[RIGHT_SIDE].x << "\t" << facialLandmarks[RIGHT_SIDE].y << std::endl;
-    pointPositionsFile << facialLandmarks[LEFT_SIDE].x << "\t" << facialLandmarks[LEFT_SIDE].y << std::endl;
-    pointPositionsFile << stommion.x << "\t" << stommion.y << std::endl;
-    pointPositionsFile.close();
-
-    // Write the pose information (rvec and tvec)
-    std::ofstream poseFile;
-    poseFile.open(("./headpose/head_pose_" + boost::lexical_cast<std::string>(counter) + ".txt").c_str());
-    poseFile << _rvec.at<double>(0) << "\t" << _rvec.at<double>(1) << "\t" << _rvec.at<double>(2) << std::endl;
-    poseFile << _tvec.at<double>(0) << "\t" << _tvec.at<double>(1) << "\t" << _tvec.at<double>(2) << std::endl;
-    poseFile.close();
-    counter++;
     
-    */
+    // If we already have enough samples, do not add more
+    if(_sampleHeadPoseAngles.size() >= 40) {
+        return false;
+    }
     
+    cv::Vec3d currentPoseAngles = getEulerAngles(_rvec);
+    //std::cout << "Current pose: " << currentPoseAngles << std::endl << "--------------" << std::endl;
+        
+    for(int i=0; i<_sampleHeadPoseAngles.size(); i++) {
+        double difference = cv::norm(currentPoseAngles - _sampleHeadPoseAngles[i]);
+        //std::cout << "Comparing to " << _sampleHeadPoseAngles[i] << ", norm is: " << difference << std::endl;
+        
+        minDifference = std::min(difference, minDifference);
+    }
+    
+    //std::cout << "Min norm is: " << minDifference << std::endl << std::endl;
+    
+    // If the current head pose angle has large enough difference compared to previous samples, 
+    // add a new sample
+    if(minDifference > 0.15) {
+        return true;
+    }
+    
+    return false;
+}
+
+void FacePoseEstimator::addFaceSample() {
+    _lastSampleFrame = Application::Components::videoInput->frameCount;
     // Add the facial landmark positions, rvec and tvec vectors to the corresponding vectors
     std::vector<cv::Point2f> *facePoints = new std::vector<cv::Point2f>();
     facePoints->push_back(cv::Point2f(facialLandmarks[SELLION].x,  facialLandmarks[SELLION].y));
@@ -233,6 +228,9 @@ void FacePoseEstimator::addFaceSample() {
     cv::Mat *tempTvec = new cv::Mat();
     _tvec.copyTo(*tempTvec);
     _sampleTvecs.push_back(*tempTvec);
+    
+    // Calculate the Euler angles for face pose (yaw, pitch, roll) and store in the _sampleHeadPoseAngles vector
+    _sampleHeadPoseAngles.push_back(getEulerAngles(_rvec));
     
     std::cout << "Added face sample!!" << std::endl;
     
@@ -307,30 +305,6 @@ void FacePoseEstimator::draw() {
     cv::line(image, Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[0]), Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[2]), cv::Scalar(0,255,0),2,CV_AA);
     cv::line(image, Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[0]), Utils::mapFromCameraToDebugFrameCoordinates(projectedAxes[1]), cv::Scalar(0,0,255),2,CV_AA);
 
-
-/*  cv::Matx33d rotation;
-    cv::Rodrigues(_rvec, rotation);
-
-    headPose(0,0) = rotation(0,0);
-    headPose(0,1) = rotation(0,1);
-    headPose(0,2) = rotation(0,2);
-    headPose(0,3) = _tvec.at<double>(0)/1000;
-    
-    headPose(1,0) = rotation(1,0);
-    headPose(1,1) = rotation(1,1);
-    headPose(1,2) = rotation(1,2);
-    headPose(1,3) = _tvec.at<double>(1)/1000;
-    
-    headPose(2,0) = rotation(2,0);
-    headPose(2,1) = rotation(2,1);
-    headPose(2,2) = rotation(2,2);
-    headPose(2,3) = _tvec.at<double>(2)/1000;
-    
-    headPose(3,0) = 0;
-    headPose(3,1) = 0;
-    headPose(3,2) = 0;
-    headPose(3,3) = 1;  */
-
     cv::putText(image, "("  + boost::lexical_cast<std::string>(int(_tvec.at<double>(0)/10)) + "cm, " 
                             + boost::lexical_cast<std::string>(int(_tvec.at<double>(1)/10)) + "cm, " 
                             + boost::lexical_cast<std::string>(int(_tvec.at<double>(2)/10)) + "cm)", 
@@ -345,11 +319,27 @@ void FacePoseEstimator::draw() {
     
     cv::Vec3d rotationAngles = getEulerAngles(_rvec);
     
-    cv::putText(image, "ROTATIONS: ("  + boost::lexical_cast<std::string>(int(rotationAngles[0])) + ", " 
-                            + boost::lexical_cast<std::string>(int(rotationAngles[1])) + ", " 
-                            + boost::lexical_cast<std::string>(int(rotationAngles[2])) + ")",
+    cv::putText(image, "ROTATIONS: ("  + boost::lexical_cast<std::string>(int((180/M_PI)*rotationAngles[0])) + ", " 
+                            + boost::lexical_cast<std::string>(int((180/M_PI)*rotationAngles[1])) + ", " 
+                            + boost::lexical_cast<std::string>(int((180/M_PI)*rotationAngles[2])) + ")",
             cv::Point(100, 800), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
-
+    
+    
+    // TODO Change fixed values
+    int monitorCenterX = 960;
+    int monitorCenterY = 540;
+    
+    // Correct for pitch and yaw of head pose change 
+    Application::Data::headPoseCorrection.x = tan(rotationAngles[0])*_tvec.at<double>(2)/PIXEL_WIDTH;
+    Application::Data::headPoseCorrection.y = tan(rotationAngles[1])*_tvec.at<double>(2)/PIXEL_WIDTH;
+    
+    // Correct for head position change (in the horizontal and vertical directions)
+    Application::Data::headPoseCorrection.x += _tvec.at<double>(0)/PIXEL_WIDTH;
+    Application::Data::headPoseCorrection.y += _tvec.at<double>(1)/PIXEL_WIDTH;
+    
+    cv::circle(image,
+        Utils::mapFromSecondMonitorToDebugFrameCoordinates(cv::Point(monitorCenterX + Application::Data::headPoseCorrection.x, monitorCenterY + Application::Data::headPoseCorrection.y)),
+        8, cv::Scalar(255, 0, 0), -1, 8, 0);
 }
 
 // Return the used head model (either the generic one or the personalized one)
@@ -382,9 +372,15 @@ void FacePoseEstimator::coordinateDescentIteration() {
         calculateHeadModel(_parameters, _headModel);
     }
     
+    // Clear the _sampleHeadPoseAngles before recalculating them all
+    _sampleHeadPoseAngles.clear();
+    
     // Update the rvec and tvec vectors for all samples using the updated 3D head model
     for(int i=0; i<_sampleCount; i++) {
         estimateFacePoseFrom2DPoints(_sampleFacePoints[i], _sampleRvecs[i], _sampleTvecs[i], true);
+    
+        // Calculate the updated Euler angles for face pose (yaw, pitch, roll) and store in the _sampleHeadPoseAngles vector
+        _sampleHeadPoseAngles.push_back(getEulerAngles(_sampleRvecs[i]));
     }
     
     //std::cout << "Iteration #"<< _iterationNumber << ", avg. error = " << calculateProjectionErrors(_headModel) << std::endl;
@@ -485,9 +481,9 @@ cv::Vec3d FacePoseEstimator::getEulerAngles(cv::Mat rotationVector) {
     cv::Mat rotatedAxes = rotationMatrix*faceAxes;
 
     // Face axes (3 unit vectors in each axis)     
-    double yaw = (180/M_PI)*atan2(rotatedAxes.at<double>(0, 0), -rotatedAxes.at<double>(2, 0));
-    double pitch = (180/M_PI)*atan2(rotatedAxes.at<double>(1, 0), -rotatedAxes.at<double>(2, 0));
-    double roll = (180/M_PI)*atan2(rotatedAxes.at<double>(0, 2), -rotatedAxes.at<double>(1, 2));
+    double yaw = atan2(rotatedAxes.at<double>(0, 0), -rotatedAxes.at<double>(2, 0));
+    double pitch = atan2(rotatedAxes.at<double>(1, 0), -rotatedAxes.at<double>(2, 0));
+    double roll = atan2(rotatedAxes.at<double>(0, 2), -rotatedAxes.at<double>(1, 2));
     
     eulerAngles[0] = yaw;
     eulerAngles[1] = pitch;

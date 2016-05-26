@@ -1,12 +1,11 @@
 #pragma once
 
 #include "ImageWindow.h"
-#include "Point.h"
 #include "Component.h"
 
 class TestWindow: public Component {
 public:
-	TestWindow(const std::vector<Point> &points);
+	TestWindow(const std::vector<cv::Point> &points);
 	~TestWindow();
 	
 	// Main processing function
@@ -21,7 +20,7 @@ public:
 	void draw();
 	
 	bool isActive();
-	Point getActivePoint();
+	cv::Point getActivePoint();
 	int getPointNumber();
 	int getPointFrameNo();
 	bool isLastFrame();
@@ -31,7 +30,7 @@ public:
 	
 private:
 	int _frameNumber;
-	std::vector<Point> _points;
+	std::vector<cv::Point> _points;
 	ImageWindow _window;
 	cv::Mat _screenImage;
 	cv::Mat _targetImage;

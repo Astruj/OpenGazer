@@ -37,7 +37,7 @@ private:
 	// Gaussian Process estimators for right and left eye and both directions (X, Y)
 	boost::scoped_ptr<HistProcess> _histX, _histY, _histXLeft, _histYLeft;
 
-	//std::vector<Point> _calibrationTargetPointsAllFrames;	// ???
+	//std::vector<cv::Point> _calibrationTargetPointsAllFrames;	// ???
 
 	static double covarianceFunctionSE(const cv::Mat &histogram1, const cv::Mat &histogram2);
 
