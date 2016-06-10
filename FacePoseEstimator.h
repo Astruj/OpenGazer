@@ -11,25 +11,24 @@
 #include <dlib/image_io.h>
 #include <dlib/opencv.h>
 
-/*
- * OpenCV head pose angle estimation implementation adapted from CHILI Lab / EPFL:
- *
- *      https://github.com/chili-epfl/attention-tracker/blob/master/src/head_pose_estimation.hpp
- */
-// Anthropometric for adults (More or less the average of 95th percentile male & female values)
-// Relative position of various facial feature relative to sellion
-// Values taken from https://en.wikipedia.org/wiki/Human_head
-// X points forward
-const static cv::Point3f P3D_SELLION(0., 0.,0.);
-const static cv::Point3f P3D_RIGHT_EYE(-20., -65,-5.);
-const static cv::Point3f P3D_LEFT_EYE(-20., 65,-5.);
-const static cv::Point3f P3D_NOSE(21.0, 0., -46.0);
-const static cv::Point3f P3D_MENTON(0., 0.,-128.5);
+// Indexes for 3D points included in the head model
+#define INDEX_SELLION 0
+#define INDEX_RIGHT_EYE 1
+#define INDEX_LEFT_EYE 2
+#define INDEX_NOSE 3
+#define INDEX_MENTON 4
 
 // 3 additional points for the extended model
-const static cv::Point3f P3D_RIGHT_EAR(-100., -74.5,-6.);
-const static cv::Point3f P3D_LEFT_EAR(-100., 74.5,-6.);
-const static cv::Point3f P3D_STOMMION(10.0, 0., -73.0);
+#define INDEX_RIGHT_EAR 5
+#define INDEX_LEFT_EAR 6
+#define INDEX_STOMMION 7
+
+// Indexes for 3D points for the eye rectangle corners
+#define INDEX_EYE_TOP_OUTER 0
+#define INDEX_EYE_TOP_INNER 1
+#define INDEX_EYE_BOTTOM_OUTER 2
+#define INDEX_EYE_BOTTOM_INNER 3
+
 
 // Indexes for the personal parameters for the head model
 #define PAR_EYE_DEPTH 0
@@ -94,6 +93,8 @@ public:
     
     cv::Point2f rightEye;
     cv::Point2f leftEye;
+    std::vector<cv::Point2f> eyeRectangleCorners;    // 2D points defining the bounds of the eye rectangles
+    std::vector<cv::Point2f> eyeRectangleCorners3dLeft;
 
 private:
     bool _isActive;
@@ -107,7 +108,9 @@ private:
     cv::Matx33f _projection;
     std::vector<cv::Point3f> _genericHeadModel;
     std::vector<cv::Point3f> _headModel;
-    std::vector<cv::Point3f> _eyeRegionPoints;
+    
+    std::vector<cv::Point3f> _eyeRectangleCorners3d;    // 3D points defining the bounds of the eye rectangles
+    std::vector<cv::Point3f> _eyeRectangleCorners3dLeft;
 
     int _sampleCount;
     int _lastSampleFrame;
@@ -136,6 +139,8 @@ private:
     void estimateFacePoseFrom2DPoints(const std::vector<cv::Point2f> facePoints, cv::Mat &rvec, cv::Mat &tvec, bool useExtrinsicGuess);
     std::vector<cv::Point3f> getUsedHeadModel();
     cv::Vec3d getEulerAngles(cv::Mat rotationVector);
+    
+    void calculateEyeRectangleCorners();
     
     // Save & load personal parameters
     void saveParameters();
