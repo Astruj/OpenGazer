@@ -23,12 +23,6 @@
 #define INDEX_LEFT_EAR 6
 #define INDEX_STOMMION 7
 
-// Indexes for 3D points for the eye rectangle corners
-#define INDEX_EYE_TOP_OUTER 0
-#define INDEX_EYE_TOP_INNER 1
-#define INDEX_EYE_BOTTOM_OUTER 2
-#define INDEX_EYE_BOTTOM_INNER 3
-
 
 // Indexes for the personal parameters for the head model
 #define PAR_EYE_DEPTH 0
@@ -94,7 +88,7 @@ public:
     cv::Point2f rightEye;
     cv::Point2f leftEye;
     std::vector<cv::Point2f> eyeRectangleCorners;    // 2D points defining the bounds of the eye rectangles
-    std::vector<cv::Point2f> eyeRectangleCorners3dLeft;
+    std::vector<cv::Point2f> eyeRectangleCornersLeft;
 
 private:
     bool _isActive;

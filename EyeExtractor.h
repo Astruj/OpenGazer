@@ -39,6 +39,9 @@ private:
     PointTracker *_pointTracker = NULL;
     FacePoseEstimator *_facePoseEstimator = NULL;
 
-	void extractEye(const cv::Mat originalImage);
-	void extractEyeLeft(const cv::Mat originalImage);
+	void extractEyes(const cv::Mat originalImage);
+	void extractRegion(const cv::Mat originalImage, cv::Point2f imageCoords[3], cv::Point2f extractedCoords[3],
+						cv::Mat &extractedColor, cv::Mat &extractedGrey, cv::Mat &extractedFloat);
+	//void extractEye(const cv::Mat originalImage);
+	//void extractEyeLeft(const cv::Mat originalImage);
 };

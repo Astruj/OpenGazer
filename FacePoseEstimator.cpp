@@ -149,13 +149,13 @@ void FacePoseEstimator::process() {
         
         // Update the estimations for left and right eye corners
         std::vector<cv::Point2f> eyeCornerProjections;
-        cv::projectPoints(getUsedHeadModel(), _rvec, _tvec, eyeCornerProjections);
+        projectPoints(getUsedHeadModel(), _rvec, _tvec, eyeCornerProjections);
         
         // Update the 2D eye rectangle corners
         eyeRectangleCorners.clear();
         eyeRectangleCornersLeft.clear();
-        cv::projectPoints(_eyeRectangleCorners3d, _rvec, _tvec, eyeRectangleCorners);
-        cv::projectPoints(_eyeRectangleCorners3dLeft, _rvec, _tvec, eyeRectangleCorners3dLeft);
+        projectPoints(_eyeRectangleCorners3d, _rvec, _tvec, eyeRectangleCorners);
+        projectPoints(_eyeRectangleCorners3dLeft, _rvec, _tvec, eyeRectangleCornersLeft);
         
         // Smooth the estimation a little bit
         double alpha = 0.3;//    DISABLED SMOOTHING FOR NOW
@@ -393,7 +393,7 @@ void FacePoseEstimator::draw() {
     // Draw the projected eye region corner points
     for (int i=0; i<eyeRectangleCorners.size(); i++) {
         cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(eyeRectangleCorners[i]), 2, cv::Scalar(0,255,255), 2);
-        cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(eyeRectangleCorners3dLeft[i]), 2, cv::Scalar(0,255,255), 2);
+        cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(eyeRectangleCornersLeft[i]), 2, cv::Scalar(0,255,255), 2);
     }
 }
 
@@ -511,27 +511,27 @@ void FacePoseEstimator::calculateEyeRectangleCorners() {
     // Clear previous points
     _eyeRectangleCorners3d.clear();
     
-    // Top outer corner
+    // Top right corner
     _eyeRectangleCorners3d.push_back(cv::Point3f(rightEyeCorner.x, rightEyeCorner.y,            rightEyeCorner.z + eyeHalfHeight));
-    // Top inner corner
-    _eyeRectangleCorners3d.push_back(cv::Point3f(rightEyeCorner.x, rightEyeCorner.y + eyeWidth, rightEyeCorner.z + eyeHalfHeight));
-    // Bottom outer corner
+    // Bottom right corner
     _eyeRectangleCorners3d.push_back(cv::Point3f(rightEyeCorner.x, rightEyeCorner.y,            rightEyeCorner.z - eyeHalfHeight));
-    // Bottom inner corner
+    // Bottom left corner
     _eyeRectangleCorners3d.push_back(cv::Point3f(rightEyeCorner.x, rightEyeCorner.y + eyeWidth, rightEyeCorner.z - eyeHalfHeight));
+    // Top left corner
+    _eyeRectangleCorners3d.push_back(cv::Point3f(rightEyeCorner.x, rightEyeCorner.y + eyeWidth, rightEyeCorner.z + eyeHalfHeight));
     
     // LEFT EYE
     // Clear previous points
     _eyeRectangleCorners3dLeft.clear();
     
-    // Top outer corner
-    _eyeRectangleCorners3dLeft.push_back(cv::Point3f(leftEyeCorner.x, leftEyeCorner.y,            leftEyeCorner.z + eyeHalfHeight));
-    // Top inner corner
+    // Top right corner
     _eyeRectangleCorners3dLeft.push_back(cv::Point3f(leftEyeCorner.x, leftEyeCorner.y - eyeWidth, leftEyeCorner.z + eyeHalfHeight));
-    // Bottom outer corner
-    _eyeRectangleCorners3dLeft.push_back(cv::Point3f(leftEyeCorner.x, leftEyeCorner.y,            leftEyeCorner.z - eyeHalfHeight));
-    // Bottom inner corner
+    // Bottom right corner
     _eyeRectangleCorners3dLeft.push_back(cv::Point3f(leftEyeCorner.x, leftEyeCorner.y - eyeWidth, leftEyeCorner.z - eyeHalfHeight));
+    // Bottom left corner
+    _eyeRectangleCorners3dLeft.push_back(cv::Point3f(leftEyeCorner.x, leftEyeCorner.y,            leftEyeCorner.z - eyeHalfHeight));
+    // Top left corner
+    _eyeRectangleCorners3dLeft.push_back(cv::Point3f(leftEyeCorner.x, leftEyeCorner.y,            leftEyeCorner.z + eyeHalfHeight));
 }
 
 // Calculates the average projection error using the given 3D head model
