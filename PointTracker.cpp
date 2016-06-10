@@ -11,6 +11,7 @@
 using Utils::operator<<;
 using Utils::operator>>;
 
+/* TODO REMOVE THESE TWO FUNCTIONS */
 static cv::Point pointBetweenRects(const cv::Point &point, cv::Rect source, cv::Rect dest) {
 	return cv::Point((point.x - source.x) * (double(dest.width) / source.width) + dest.x,
 		(point.y - source.y) * (double(dest.height) / source.height) + dest.y);
@@ -159,11 +160,11 @@ int PointTracker::pointCount() {
 	return currentPoints.size();
 }
 
-std::vector<cv::Point> PointTracker::getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints) {
-	std::vector<cv::Point> vec;
+std::vector<cv::Point2f> PointTracker::getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints) {
+	std::vector<cv::Point2f> vec;
 	for (int i = 0; i < pointCount(); i++) {
 		if (allPoints || status[i]) {
-			vec.push_back(cv::Point((this->*points)[i].x, (this->*points)[i].y));
+			vec.push_back(cv::Point2f((this->*points)[i].x, (this->*points)[i].y));
 		}
 	}
 	return vec;

@@ -49,4 +49,6 @@ private:
 
 	void trainGaussianProcesses();
 	void clearTargetSamples();
+	void saveParameters();
+	void loadParameters();
 };

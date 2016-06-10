@@ -7,6 +7,8 @@
 #include <QDesktopWidget>
 #include <QMainWindow>
 
+#define USER_PARAMETERS_FOLDER "config/users"
+
 namespace Utils {
 	typedef boost::shared_ptr<const cv::Mat> SharedImage;
 

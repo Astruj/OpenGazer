@@ -4,7 +4,6 @@
 
 
 #include "GazeTracker.h"
-//#include "mir.h"
 #include "Application.h"
 
 

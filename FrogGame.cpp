@@ -73,6 +73,7 @@ void FrogGame::process() {
     cv::Point mappedEstimation;
 	
     Utils::mapToFirstMonitorCoordinates(estimation, mappedEstimation);
+	//std::cout << "Base estimation: " << Application::Data::gazePoints[0] << ", correction: " << Application::Data::headPoseCorrection << std::endl;
 	
 	//const int width = _backgroundWithFrog.size().width;
 	//const int height = _backgroundWithFrog.size().height;
@@ -80,6 +81,9 @@ void FrogGame::process() {
 	double alpha = 0.6;
 	estimationXRunningAverage = (1 - alpha) * mappedEstimation.x + alpha * estimationXRunningAverage;
 	estimationYRunningAverage = (1 - alpha) * mappedEstimation.y + alpha * estimationYRunningAverage;
+	
+	
+	//std::cout << "MAPPED: " << mappedEstimation << ", AVERAGED: (" << estimationXRunningAverage << ", " << estimationYRunningAverage << ")" << std::endl << std::endl;
 	
 	
 

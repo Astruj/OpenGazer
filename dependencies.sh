@@ -11,17 +11,9 @@ pushd ~ 2>&1 > /dev/null
 echo "Installing dependencies for OpenGazer...this may take a while..."
 
 if [[ "$(uname)" == "Linux" ]] ; then
-  echo "Installing libraries for OpenCV, Boost, GSL, FANN and CMake"
+  echo "Installing libraries for OpenCV, Boost, FANN and CMake"
   sudo apt-get update
-  sudo apt-get install -y libopencv-dev libboost-dev libboost-system-dev libboost-filesystem-dev libgsl0-dev libfann2 libfann-dev libv4l-dev "liblapack*" "libblas*" cmake wget
-
-  echo "Installing GSL from source"
-  wget ftp://ftp.gnu.org/gnu/gsl/gsl-1.15.tar.gz
-  tar zxvf gsl-1.15.tar.gz
-  pushd gsl-1.15 2>&1 > /dev/null
-  ./configure
-  make
-  sudo make install
+  sudo apt-get install -y libopencv-dev libboost-dev libboost-system-dev libboost-filesystem-dev libboost-serialization-dev libfann2 libfann-dev libv4l-dev "liblapack*" "libblas*" cmake wget
 
   echo "Installing FFMPEG from source"
   { popd; popd; } 2>&1 > /dev/null
@@ -48,7 +40,7 @@ elif [[ "$(uname)" == "Darwin" ]] ; then
   fi
 
   brew tap homebrew/science
-  brew install gsl cmake ffmpeg opencv fann boost
+  brew install cmake ffmpeg opencv fann boost
 
   brew install qt5
   brew link --force qt5

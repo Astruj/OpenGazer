@@ -16,6 +16,7 @@ namespace Application {
 		bool noWindows = false;
 		bool noTracking = false;
 		bool useGroundTruth = false;
+		std::string subject;
 	}
     
     std::map<std::string, Component*> components;

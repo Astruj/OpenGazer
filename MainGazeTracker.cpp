@@ -106,11 +106,11 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 		}
 	}
 
-	std::string subject = args.getOptionValue("subject");
+	Application::Settings::subject = args.getOptionValue("subject");
 	std::string setup = args.getOptionValue("setup");
 
-	if (subject.length() == 0) {
-		subject = "default";
+	if (Application::Settings::subject.length() == 0) {
+		Application::Settings::subject = "default";
 	}
 
 	if (setup.length() == 0) {
@@ -170,7 +170,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	boost::filesystem::create_directories(folder);
 
 	// --subject parameter
-	_basePath = Utils::getUniqueFileName(folderParameter, subject + "_" + setup + "_" + args.getOptionValue("resolution"));
+	_basePath = Utils::getUniqueFileName(folderParameter, Application::Settings::subject + "_" + setup + "_" + args.getOptionValue("resolution"));
 
 	// --record parameter
 	if (args.getOptionValue("record") == "1") {
@@ -214,7 +214,7 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
         Application::resultsOutputFile << "--headdistance=" << _headDistance << std::endl;
         Application::resultsOutputFile << "--resolution=" << args.getOptionValue("resolution") << std::endl;
         Application::resultsOutputFile << "--setup=" << setup << std::endl;
-        Application::resultsOutputFile << "--subject=" << subject << std::endl << std::endl;
+        Application::resultsOutputFile << "--subject=" << Application::Settings::subject << std::endl << std::endl;
         Application::resultsOutputFile << "--sigma=" << args.getOptionValue("sigma") << std::endl;
         Application::resultsOutputFile << "--lscale=" << args.getOptionValue("lscale") << std::endl;
     }

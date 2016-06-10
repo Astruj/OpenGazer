@@ -18,8 +18,8 @@ class HistogramFeatureExtractor: public Component {
 	cv::Mat _irisTemplate;
 	cv::Mat _gaussian2D[VECTOR_SIZE];
 
-	EyeExtractor *_groundTruth;
-    EyeExtractor *_eyeExtractor;
+	EyeExtractor *_groundTruth = NULL;
+    EyeExtractor *_eyeExtractor = NULL;
 
 public:
 	cv::Mat horizontalFeatures, verticalFeatures, horizontalFeaturesLeft, verticalFeaturesLeft;

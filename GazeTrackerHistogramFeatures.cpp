@@ -1,8 +1,15 @@
 #include <fstream>
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem.hpp>
+
+// Serialization related libraries
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
+
+#include "serialization.h"
 
 #include "GazeTrackerHistogramFeatures.h"
-//#include "mir.h"
 #include "Application.h"
 
 GazeTrackerHistogramFeatures::GazeTrackerHistogramFeatures()
@@ -19,6 +26,8 @@ GazeTrackerHistogramFeatures::GazeTrackerHistogramFeatures()
 
 	gazePoint.x = 0;
 	gazePoint.y = 0;
+	
+	loadParameters();
 }
 
 void GazeTrackerHistogramFeatures::process() {
@@ -52,7 +61,8 @@ void GazeTrackerHistogramFeatures::process() {
 	// If active and there is a usable frame
 	if(Application::Components::calibrator->isActive()
 		&& Application::Components::calibrator->getPointFrameNo() >= 11
-		&& !_eyeExtractor->isBlinking()) {
+		&& !_eyeExtractor->isBlinking()
+		&& _currentTargetSampleCount < MAX_SAMPLES_PER_TARGET) {
 			// Copy the current histogram feature sample to the corresponding row in the accumulation matrices (currentTargetSamples)
 			_currentSample.copyTo(_currentTargetSamples(cv::Rect(_currentTargetSampleCount, 0, 1, FEATURE_DIM)));
 			_currentSampleLeft.copyTo(_currentTargetSamplesLeft(cv::Rect(_currentTargetSampleCount, 0, 1, FEATURE_DIM)));
@@ -148,6 +158,8 @@ void GazeTrackerHistogramFeatures::trainGaussianProcesses() {
 
 	_histXLeft.reset(new HistProcess(_exemplarsLeft, xLabels, covarianceFunctionSE, 0.01));
 	_histYLeft.reset(new HistProcess(_exemplarsLeft, yLabels, covarianceFunctionSE, 0.01));
+	
+	saveParameters();
 }
 
 // Clears the matrix buffer where samples are added for each calibratin target
@@ -171,6 +183,44 @@ double GazeTrackerHistogramFeatures::covarianceFunctionSE(const cv::Mat &histogr
 
 	// Return the squared exponential kernel output
     return sigma*sigma*exp(-norm / (2*lscale*lscale) );
+}
+
+
+
+
+// Save the personal calibration to a text file
+void GazeTrackerHistogramFeatures::saveParameters() {
+	return;
+/*
+    // Make sure the folder for saving user parameters exists  
+    boost::filesystem::create_directories(USER_PARAMETERS_FOLDER);
+    std::string fileName = std::string(USER_PARAMETERS_FOLDER) + "/" + Application::Settings::subject + "_calibration.bin";
+ 	
+    std::ofstream outputFile(fileName.c_str(), std::ios::out | std::ios::binary);
+    boost::archive::binary_oarchive oArchive(outputFile);
+    
+    // Serialize the calibration data
+    oArchive << Application::Data::calibrationTargets << _exemplars << _exemplarsLeft;
+	*/
+}
+
+// Load the personal calibration from the text file, if it exists
+void GazeTrackerHistogramFeatures::loadParameters() {
+	return;
+	/*
+    // Check if the parameters file for this user exists
+    std::string fileName = std::string(USER_PARAMETERS_FOLDER) + "/" + Application::Settings::subject + "_calibration.bin";
+    
+    if(boost::filesystem::exists(fileName)) {
+        std::ifstream inputFile(fileName.c_str(), std::ios::in | std::ios::binary);
+        {
+            boost::archive::binary_iarchive iArchive(inputFile);
+            
+            // Deserialize the calibration data
+            iArchive >> Application::Data::calibrationTargets >> _exemplars >> _exemplarsLeft;
+        }
+    }
+	*/
 }
 
 /*

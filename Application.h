@@ -39,6 +39,7 @@ namespace Application {
 		extern bool noWindows;
 		extern bool noTracking;
 		extern bool useGroundTruth;
+		extern std::string subject;
 	}
     
     extern std::map<std::string, Component*> components;

@@ -23,7 +23,7 @@ public:
 	int countActivePoints();
 	bool areAllPointsActive();
 	int pointCount();
-	std::vector<cv::Point> getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints=true);
+	std::vector<cv::Point2f> getPoints(const std::vector<cv::Point2f> PointTracker::*points, bool allPoints=true);
 	void draw();
 	void normalizeOriginalGrey();
 

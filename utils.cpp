@@ -46,8 +46,8 @@ namespace Utils {
 		cv::Rect *monitor1Geometry = Utils::getFirstMonitorGeometry();
 		cv::Rect *monitor2Geometry = Utils::getSecondMonitorGeometry();
 
-		monitor1Point.x = (monitor2Point.x / monitor2Geometry->width) * (monitor1Geometry->width - 40) + monitor1Geometry->x;
-		monitor1Point.y = (monitor2Point.y / monitor2Geometry->height) * monitor1Geometry->height + monitor1Geometry->y;
+		monitor1Point.x = (int) ((monitor2Point.x / (double) monitor2Geometry->width) * monitor1Geometry->width + monitor1Geometry->x);
+		monitor1Point.y = (int) ((monitor2Point.y / (double) monitor2Geometry->height) * monitor1Geometry->height + monitor1Geometry->y);
 	}
 
 	cv::Point mapFromCameraToDebugFrameCoordinates(cv::Point point) {
@@ -99,12 +99,12 @@ namespace Utils {
 		}
 
 		if (reverseX) {
-			videoPoint.x = monitor1Geometry->width - (monitor2Point.x / monitor2Geometry->width) * monitor1Geometry->width;
+			videoPoint.x = (int) (monitor1Geometry->width - (monitor2Point.x / (double) monitor2Geometry->width) * monitor1Geometry->width);
 		} else {
-			videoPoint.x = (monitor2Point.x / monitor2Geometry->width) * monitor1Geometry->width;
+			videoPoint.x = (int) ((monitor2Point.x / (double) monitor2Geometry->width) * monitor1Geometry->width);
 		}
 
-		videoPoint.y = (monitor2Point.y / monitor2Geometry->height) * monitor1Geometry->height;
+		videoPoint.y = (int) ((monitor2Point.y / (double) monitor2Geometry->height) * monitor1Geometry->height);
 	}
 
 	// Neural network
@@ -112,8 +112,8 @@ namespace Utils {
 		cv::Rect *monitor1Geometry = new cv::Rect(0, 0, 1, 1);
 		cv::Rect *monitor2Geometry = Utils::getSecondMonitorGeometry();
 
-		nnPoint.x = ((point.x - monitor2Geometry->x) / monitor2Geometry->width) * monitor1Geometry->width + monitor1Geometry->x;
-		nnPoint.y = ((point.y - monitor2Geometry->y) / monitor2Geometry->height) * monitor1Geometry->height + monitor1Geometry->y;
+		nnPoint.x = (int) (((point.x - monitor2Geometry->x) / (double) monitor2Geometry->width) * monitor1Geometry->width + monitor1Geometry->x);
+		nnPoint.y = (int) (((point.y - monitor2Geometry->y) / (double) monitor2Geometry->height) * monitor1Geometry->height + monitor1Geometry->y);
 
 		//cout << "ORIG: " << point.x << ", " << point.y << " MAP: " << nnPoint.x << ", " << nnPoint.y << endl;
 	}
@@ -123,8 +123,8 @@ namespace Utils {
 		cv::Rect *monitor1Geometry = Utils::getSecondMonitorGeometry();
 		cv::Rect *monitor2Geometry = new cv::Rect(0, 0, 1, 1);
 
-		point.x = ((nnPoint.x - monitor2Geometry->x) / monitor2Geometry->width) * monitor1Geometry->width + monitor1Geometry->x;
-		point.y = ((nnPoint.y - monitor2Geometry->y) / monitor2Geometry->height) * monitor1Geometry->height + monitor1Geometry->y;
+		point.x = (int) (((nnPoint.x - monitor2Geometry->x) / (double) monitor2Geometry->width) * monitor1Geometry->width + monitor1Geometry->x);
+		point.y = (int) (((nnPoint.y - monitor2Geometry->y) / (double) monitor2Geometry->height) * monitor1Geometry->height + monitor1Geometry->y);
 
 		//cout << "ORIG: " << point.x << ", " << point.y << " MAP: " << nnPoint.x << ", " << nnPoint.y << endl;
 	}
@@ -187,7 +187,7 @@ namespace Utils {
 				// break if any error
 				break;
 			}
-			std::cout << "Read point: " << x << ", " << y << std::endl;
+			
 			result.push_back(cv::Point(x*rect->width, y*rect->height));
 		}
 

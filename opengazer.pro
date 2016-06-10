@@ -4,9 +4,9 @@
 CONFIG	+=	qt
 QT += gui widgets
 
-HEADERS += 	Calibrator.h EyeExtractor.h GazeTracker.h MainGazeTracker.h OutputMethods.h PointTracker.h FaceDetector.h utils.h BlinkDetector.h FeatureDetector.h mir.h DebugWindow.h Application.h Video.h AnchorPointSelector.h Command.h ImageWindow.h ImageWidget.h TestWindow.h Prefix.hpp HiResTimer.h EyeCenterDetector.h GoogleGlassWindow.h EyeExtractorSegmentationGroundTruth.h FrogGame.h HistogramFeatureExtractor.h PointTrackerWithTemplate.h GazeTrackerHistogramFeatures.h Component.h Configuration.h FacePoseEstimator.h
+HEADERS += 	Calibrator.h EyeExtractor.h GazeTracker.h MainGazeTracker.h OutputMethods.h PointTracker.h FaceDetector.h utils.h BlinkDetector.h FeatureDetector.h DebugWindow.h Application.h Video.h AnchorPointSelector.h Command.h ImageWindow.h ImageWidget.h TestWindow.h Prefix.hpp HiResTimer.h EyeCenterDetector.h GoogleGlassWindow.h EyeExtractorSegmentationGroundTruth.h FrogGame.h HistogramFeatureExtractor.h PointTrackerWithTemplate.h GazeTrackerHistogramFeatures.h Component.h Configuration.h FacePoseEstimator.h serialization.h
 
-SOURCES += 	opengazer.cpp Calibrator.cpp EyeExtractor.cpp GazeTracker.cpp MainGazeTracker.cpp OutputMethods.cpp PointTracker.cpp FaceDetector.cpp utils.cpp BlinkDetector.cpp FeatureDetector.cpp mir.cpp DebugWindow.cpp Application.cpp Video.cpp AnchorPointSelector.cpp Command.cpp ImageWindow.cpp ImageWidget.cpp TestWindow.cpp HiResTimer.cpp EyeCenterDetector.cpp GoogleGlassWindow.cpp EyeExtractorSegmentationGroundTruth.cpp  FrogGame.cpp HistogramFeatureExtractor.cpp PointTrackerWithTemplate.cpp GazeTrackerHistogramFeatures.cpp Configuration.cpp FacePoseEstimator.cpp ./data/dlib/dlib/all/source.cpp
+SOURCES += 	opengazer.cpp Calibrator.cpp EyeExtractor.cpp GazeTracker.cpp MainGazeTracker.cpp OutputMethods.cpp PointTracker.cpp FaceDetector.cpp utils.cpp BlinkDetector.cpp FeatureDetector.cpp DebugWindow.cpp Application.cpp Video.cpp AnchorPointSelector.cpp Command.cpp ImageWindow.cpp ImageWidget.cpp TestWindow.cpp HiResTimer.cpp EyeCenterDetector.cpp GoogleGlassWindow.cpp EyeExtractorSegmentationGroundTruth.cpp  FrogGame.cpp HistogramFeatureExtractor.cpp PointTrackerWithTemplate.cpp GazeTrackerHistogramFeatures.cpp Configuration.cpp FacePoseEstimator.cpp serialization.cpp ./data/dlib/dlib/all/source.cpp
 
 TARGET  = 	opengazer
 
@@ -18,7 +18,7 @@ macx {
     QMAKE_MAC_SDK=macosx10.11
     
     # Mac OS X linker parameters and include directories
-    QMAKE_LIBS += -L/usr/local/lib -lm -ldl -lfann -lboost_filesystem-mt -lboost_system-mt -lgsl  -lgslcblas -llapack -lblas
+    QMAKE_LIBS += -L/usr/local/lib -lm -ldl -lfann -lboost_filesystem-mt -lboost_system-mt -lboost_serialization -llapack -lblas
 
     # NOTE: Depending on your Mac OS X / XCode version you might need to use the
     # configuration that is commented out
@@ -27,7 +27,6 @@ macx {
     QMAKE_LFLAGS    += -stdlib=libc++
 
     QMAKE_CXXFLAGS += -I`brew --prefix boost`/include
-    QMAKE_CXXFLAGS += -I`brew --prefix gsl`/include
 
     #QMAKE_CFLAGS 	+= -stdlib=libstdc++
     #QMAKE_CXXFLAGS 	+= -stdlib=libstdc++
@@ -35,7 +34,7 @@ macx {
 
 unix:!macx {
     # Linux linker parameters and include directories
-    QMAKE_LIBS += -L/usr/local/lib -L/opt/local/lib -lm -ldl -lgthread-2.0 -lfann -lboost_filesystem -lboost_system -lgsl -lgslcblas -llapack -lblas
+    QMAKE_LIBS += -L/usr/local/lib -L/opt/local/lib -lm -ldl -lgthread-2.0 -lfann -lboost_filesystem -lboost_system -lboost_serialization -llapack -lblas
     #QMAKE_LIBS += -L/usr/local/cuda-6.5/lib64/ -lGLEW
 
     QMAKE_CFLAGS 	+= -DDLIB_NO_GUI_SUPPORT -DUSE_AVX_INSTRUCTIONS=ON -DUSE_SSE4_INSTRUCTIONS=ON

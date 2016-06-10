@@ -119,6 +119,7 @@ private:
 
     // Variables for coordinate descent
     std::vector<double> _parameters;
+    std::vector<double> _parameterAllowedDeviations;
     int _iterationNumber;
     
     bool detectFace();
@@ -126,6 +127,7 @@ private:
     bool shouldAddFaceSample();
     void addFaceSample();
     
+    // Coordinate descent related functions for personalizing the face parameters
     void coordinateDescentIteration();
     double calculateDerivative(int parameterIndex);
     void calculateHeadModel(const std::vector<double> parameters, std::vector<cv::Point3f> &headModel);
@@ -134,4 +136,8 @@ private:
     void estimateFacePoseFrom2DPoints(const std::vector<cv::Point2f> facePoints, cv::Mat &rvec, cv::Mat &tvec, bool useExtrinsicGuess);
     std::vector<cv::Point3f> getUsedHeadModel();
     cv::Vec3d getEulerAngles(cv::Mat rotationVector);
+    
+    // Save & load personal parameters
+    void saveParameters();
+    void loadParameters();
 };

@@ -164,7 +164,6 @@ bool Calibrator::shouldStartNextPoint() {
 void Calibrator::draw() {
 	if(isActive()) {
 		cv::Point activePoint = getActivePoint();
-		std::cout << "Active point is: " << activePoint.x << ", " << activePoint.y << std::endl;
 		
 		cv::circle(Application::Components::videoInput->debugFrame, 
 				Utils::mapFromSecondMonitorToDebugFrameCoordinates(activePoint), 

@@ -13,10 +13,16 @@
 #include "utils.h"
 #include "HiResTimer.h"
 
+#include <fstream>
 #include <iostream>
 #include <cmath>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
+
+// Serialization related libraries
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
 
 #include <opencv2/video/tracking.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -57,6 +63,25 @@ FacePoseEstimator::FacePoseEstimator() :
     for(int i=0; i<NUM_PERSONAL_PARAMETERS; i++)
         _parameters.push_back(1.0);
 
+    // Try to load (overwriting) the personal parameters if a previously saved file exists
+    loadParameters();
+    
+    // Mark the allowed max. deviation (in percent) for each parameter
+    _parameterAllowedDeviations.push_back(0.5);    // Eye depth ??
+    _parameterAllowedDeviations.push_back(0.1);    // Eye separation
+    _parameterAllowedDeviations.push_back(0.5);    // Nose depth
+    _parameterAllowedDeviations.push_back(0.2);    // Nose length
+    _parameterAllowedDeviations.push_back(0.1);    // Menton length
+    
+    _parameterAllowedDeviations.push_back(0.5);    // Ear depth
+    _parameterAllowedDeviations.push_back(0.2);    // Ear separation
+    _parameterAllowedDeviations.push_back(0.2);    // Stommion depth
+    _parameterAllowedDeviations.push_back(0.2);    // Stommion length
+    
+    std::cout << "LOADED PARAMETERS: " << std::endl;
+    for(int i=0; i<NUM_PERSONAL_PARAMETERS; i++)
+        std::cout << i << " " << _parameters[i] << std::endl;
+    
     // Calculate the head model with the default parameters
     calculateHeadModel(_parameters, _headModel);
     calculateHeadModel(_parameters, _genericHeadModel);
@@ -67,7 +92,6 @@ FacePoseEstimator::FacePoseEstimator() :
     rightEye = cv::Point2f(-1, -1);
     leftEye = cv::Point2f(-1, -1);
 }
-
 
 void FacePoseEstimator::process() {
     static int counter = 0;
@@ -112,6 +136,9 @@ void FacePoseEstimator::process() {
             for(int iteration=0; iteration<5; iteration++)
                 coordinateDescentIteration();
             timer.stop();
+            
+            // Save the updated personal parameters
+            saveParameters();
         }
         
         // Update the estimations for left and right eye corners
@@ -337,9 +364,18 @@ void FacePoseEstimator::draw() {
     Application::Data::headPoseCorrection.x += _tvec.at<double>(0)/PIXEL_WIDTH;
     Application::Data::headPoseCorrection.y += _tvec.at<double>(1)/PIXEL_WIDTH;
     
+    
+    // Draw the corrected estimation on the debug window (WHITE)
+	cv::Point correctedEstimation = Application::Data::gazePoints[0] + Application::Data::headPoseCorrection;
+    
+    cv::circle(image,
+        Utils::mapFromSecondMonitorToDebugFrameCoordinates(correctedEstimation),
+        12, cv::Scalar(255, 255, 255), -1, 12, 0);
+    
+    // Draw the correction (w.r.t. center of monitor) too (BLUE)
     cv::circle(image,
         Utils::mapFromSecondMonitorToDebugFrameCoordinates(cv::Point(monitorCenterX + Application::Data::headPoseCorrection.x, monitorCenterY + Application::Data::headPoseCorrection.y)),
-        8, cv::Scalar(255, 0, 0), -1, 8, 0);
+        4, cv::Scalar(255, 0, 0), -1, 4, 0);
 }
 
 // Return the used head model (either the generic one or the personalized one)
@@ -390,6 +426,10 @@ void FacePoseEstimator::coordinateDescentIteration() {
 
 // Calculate the derivative for the parameter at the given index
 double FacePoseEstimator::calculateDerivative(int parameterIndex) {
+    // Do not let the parameters to deviate more than the allowed amounts (between 10 to 50% depending on parameter)
+    //if(fabs(1-_parameters[parameterIndex]) > _parameterAllowedDeviations[parameterIndex])
+    //    return 0;
+    
     std::vector<double> modifiedParameters = _parameters;
     std::vector<cv::Point3f> modifiedHeadModel;
 
@@ -414,14 +454,14 @@ void FacePoseEstimator::calculateHeadModel(const std::vector<double> parameters,
     headModel.push_back(cv::Point3f(0., 0.,0.));
 
     // Right and left eyes
-    headModel.push_back(cv::Point3f(parameters[PAR_EYE_DEPTH]*-20., parameters[PAR_EYE_SEPARATION]*-65,-5.));
-    headModel.push_back(cv::Point3f(parameters[PAR_EYE_DEPTH]*-20., parameters[PAR_EYE_SEPARATION]*+65,-5.));
+    headModel.push_back(cv::Point3f(parameters[PAR_EYE_DEPTH]*-20., parameters[PAR_EYE_SEPARATION]*-59.5,-5.));
+    headModel.push_back(cv::Point3f(parameters[PAR_EYE_DEPTH]*-20., parameters[PAR_EYE_SEPARATION]*+59.5,-5.));
 
     // Nose
-    headModel.push_back(cv::Point3f(parameters[PAR_NOSE_DEPTH]*21.0, 0., parameters[PAR_NOSE_LENGTH]*-46.0));
+    headModel.push_back(cv::Point3f(parameters[PAR_NOSE_DEPTH]*22.0, 0., parameters[PAR_NOSE_LENGTH]*-48.0));
 
     // Menton
-    headModel.push_back(cv::Point3f(0., 0.,parameters[PAR_MENTON_LENGTH]*-128.5));
+    headModel.push_back(cv::Point3f(0., 0.,parameters[PAR_MENTON_LENGTH]*-117.5));
 
 #ifdef EXTENDED_FACE_MODEL
     // Right and left ears
@@ -490,4 +530,34 @@ cv::Vec3d FacePoseEstimator::getEulerAngles(cv::Mat rotationVector) {
     eulerAngles[2] = roll;
     
     return eulerAngles;
+}
+
+
+// Save the personal parameters to a text file
+void FacePoseEstimator::saveParameters() {
+    // Make sure the folder for saving user parameters exists  
+    boost::filesystem::create_directories(USER_PARAMETERS_FOLDER);
+    std::string fileName = std::string(USER_PARAMETERS_FOLDER) + "/" + Application::Settings::subject + ".txt";
+    
+    std::ofstream outputFile(fileName.c_str());
+    boost::archive::text_oarchive oArchive(outputFile);
+    
+    // Serialize the _parameters vector
+    oArchive & _parameters;
+}
+
+// Load the personal parameters from the text file, if it exists
+void FacePoseEstimator::loadParameters() {
+    // Check if the parameters file for this user exists
+    std::string fileName = std::string(USER_PARAMETERS_FOLDER) + "/" + Application::Settings::subject + ".txt";
+    
+    if(boost::filesystem::exists(fileName)) {
+        std::ifstream inputFile(fileName.c_str());
+        {
+            boost::archive::text_iarchive iArchive(inputFile);
+            
+            // Deserialize the _parameters vector
+            iArchive & _parameters;
+        }
+    }
 }

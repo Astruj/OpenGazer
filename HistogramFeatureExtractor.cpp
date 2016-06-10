@@ -5,7 +5,7 @@
 #include <fstream>
 
 HistogramFeatureExtractor::HistogramFeatureExtractor() {
-	_ellipseMask = cv::imread("./elipse.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	_ellipseMask = cv::imread("./images/elipse.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     
     int sizeImageDisk = 30;	// TODO ONUR Check disk size 5? 10? lastly 30?
 	for (int j=0; j<VECTOR_SIZE; j++){

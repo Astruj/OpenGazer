@@ -36,10 +36,9 @@ How to Contribute
 One nice-to-have feature would be compilation on Windows. If anybody wants to attempt it, here are some links:
 
 1. [boost library] (http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html)
-2. [Gsl for Windows] (http://gnuwin32.sourceforge.net/packages/gsl.htm)
-3. [OpenCV + ffmpeg] (https://github.com/Itseez/opencv/tree/ddf82d0b154873510802ef75c53e628cd7b2cb13/3rdparty/ffmpeg)
-4. [OpenCV + ffmpeg (additional)] (http://kronoskoders.logdown.com/posts/256664-installing-opencv-and-ffmpeg-on-windows)
-5. [FANN (currently not used, but still in configuration)] (http://leenissen.dk/fann/wp/help/installing-fann/)
+2. [OpenCV + ffmpeg] (https://github.com/Itseez/opencv/tree/ddf82d0b154873510802ef75c53e628cd7b2cb13/3rdparty/ffmpeg)
+3. [OpenCV + ffmpeg (additional)] (http://kronoskoders.logdown.com/posts/256664-installing-opencv-and-ffmpeg-on-windows)
+4. [FANN (currently not used, but still in configuration)] (http://leenissen.dk/fann/wp/help/installing-fann/)
 
 If you get it working, let me know! Apart from this, for developing another module (eye corner detectors, iris center detectors, gaze estimation methods, etc.), check the [DEVELOP] (https://github.com/tiendan/OpenGazer/blob/master/DEVELOP.md) file for instructions.
 
@@ -54,7 +53,7 @@ iSight camera and a Logitech webcam.
 4. Update the port definitions and install the required packages from MacPorts. Note that this
 might take a long time since all these packages have a lot of dependencies:
   - sudo port selfupdate
-  - sudo port install gsl cmake ffmpeg opencv fann boost
+  - sudo port install cmake ffmpeg opencv fann boost
 5. Download and install [XQuartz] (http://xquartz.macosforge.org/landing/)
 6. Open a terminal and build the software:
   - cd opengazer
@@ -84,17 +83,10 @@ Manual Installation on Ubuntu 12.04
 Tested on a clean installation of Ubuntu 12.04 with a Logitech webcam.
 
 1. Install required libraries
-  - sudo apt-get install libopencv-* libboost-dev libgsl0-dev libfann2 libfann-dev libv4l-dev cmake libboost-system-dev libboost-filesystem-dev
+  - sudo apt-get install libopencv-* libboost-dev libfann2 libfann-dev libv4l-dev cmake libboost-system-dev libboost-filesystem-dev
 2. Download and install [Qt] (http://www.qt.io/download-open-source/)
-3. Install GSL from source
-  - wget ftp://ftp.gnu.org/gnu/gsl/gsl-1.15.tar.gz
-  - tar zxf gsl-1.15.tar.gz
-  - cd gsl-1.15
-  - ./configure
-  - make
-  - make install
-4. [Build and install] (https://trac.ffmpeg.org/wiki/UbuntuCompilationGuide) FFMPEG 0.7.13
-5. Build eyetracker
+3. [Build and install] (https://trac.ffmpeg.org/wiki/UbuntuCompilationGuide) FFMPEG 0.7.13
+4. Build eyetracker
   - cd opengazer
   - ./configure
   - make
