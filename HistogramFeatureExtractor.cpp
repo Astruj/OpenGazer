@@ -177,8 +177,8 @@ void HistogramFeatureExtractor::createGaussians(int index) {
 
 	for (int x = 0; x < _gaussian2D[index].size().width; x++) {
 		for (int y = 0; y < _gaussian2D[index].size().height; y++) {
-			float fx = abs(x - center.x);
-			float fy = abs(y - center.y);
+			float fx = fabs(x - center.x);
+			float fy = fabs(y - center.y);
 
 			tmp = exp( - (fx * fx + fy * fy) / (2.0 * sigma * sigma)) / (2.0 * M_PI * sigma * sigma);
 			tmp = tmp / max_prob;	// Divide by max prob. so that values are in range [0, 1]

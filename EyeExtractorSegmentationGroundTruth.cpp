@@ -102,7 +102,7 @@ void EyeExtractorSegmentationGroundTruth::extractEye(cv::Mat originalImage) {
 	y0 = temp_y0;
 
 	
-	double dx = abs(x1 - x0);	// Horizontal distance between eye corners in image
+	double dx = fabs(x1 - x0);	// Horizontal distance between eye corners in image
 	double dy = 0.17 * dx;		// %20 percent of horizontal distance (used as height of extracted eyes)
 
 	// Calculate the roll angle of the head (using eye corner positions)
@@ -168,7 +168,7 @@ void EyeExtractorSegmentationGroundTruth::extractEyeLeft(cv::Mat originalImage) 
 	y0 = temp_y0;
 
 
-	double dx = abs(x1 - x0);	// Horizontal distance between eye corners in image
+	double dx = fabs(x1 - x0);	// Horizontal distance between eye corners in image
 	double dy = 0.17 * dx;		// %20 percent of horizontal distance (used as height of extracted eyes)
 
 	// Calculate the roll angle of the head (using eye corner positions)

@@ -54,7 +54,7 @@ namespace Utils {
 		return in;
 	}
 
-	template <class T> T teeFunction(T source, char *prefix, char *postfix="\n") {
+	template <class T> T teeFunction(T source, std::string prefix, std::string postfix="\n") {
 		std::cout << prefix << source << postfix;
 		return source;
 	}

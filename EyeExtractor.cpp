@@ -119,7 +119,7 @@ void EyeExtractor::extractEyes(const cv::Mat originalImage) {
         cv::Point2f leftEyeCorner  = _pointTracker->currentPoints[PointTracker::eyePoint2];
 		cv::Point2f rightToLeftVector = cv::Point2f(leftEyeCorner.x - rightEyeCorner.x, leftEyeCorner.y - rightEyeCorner.y);
 		
-		double dx = abs(rightEyeCorner.x - leftEyeCorner.x);	// Horizontal distance between eye corners in image
+		double dx = fabs(rightEyeCorner.x - leftEyeCorner.x);	// Horizontal distance between eye corners in image
 		double imageEyeHeight = 0.17 * dx;	// %17 percent of horizontal distance (used as height of extracted eyes)
 		double rollAngle = atan((leftEyeCorner.y-rightEyeCorner.y)/(leftEyeCorner.x - rightEyeCorner.x));
 		
