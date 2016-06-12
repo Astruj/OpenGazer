@@ -130,8 +130,8 @@ void EyeExtractor::extractEyes(const cv::Mat originalImage) {
 		
 		imageCoordsLeft[0] = cv::Point2f(imageCoords[0].x + rightToLeftVector.x*0.66, imageCoords[0].y + rightToLeftVector.y*0.66);	// Top right
 		imageCoordsLeft[1] = cv::Point2f(imageCoords[1].x + rightToLeftVector.x*0.66, imageCoords[1].y + rightToLeftVector.y*0.66);	// Bottom right
-		imageCoordsLeft[2] = cv::Point2f(imageCoords[0].x + rightToLeftVector.x*1.00, imageCoords[0].y + rightToLeftVector.y*1.00);	// Bottom left
-		imageCoordsLeft[3] = cv::Point2f(imageCoords[1].x + rightToLeftVector.x*1.00, imageCoords[1].y + rightToLeftVector.y*1.00);	// Top left
+		imageCoordsLeft[2] = cv::Point2f(imageCoords[1].x + rightToLeftVector.x*1.00, imageCoords[1].y + rightToLeftVector.y*1.00);	// Bottom left
+		imageCoordsLeft[3] = cv::Point2f(imageCoords[0].x + rightToLeftVector.x*1.00, imageCoords[0].y + rightToLeftVector.y*1.00);	// Top left
 	}
 	
 	// Calculate the corresponding pixel positions in the extracted images
@@ -153,166 +153,16 @@ void EyeExtractor::extractRegion(const cv::Mat originalImage, cv::Point2f imageC
 	// 
 	// Calculate the transformation matrix between two sets of points, and use it to extract eye image
 	cv::Mat transform = cv::getAffineTransform(imageCoords, extractedCoords);
-    cv::warpAffine(originalImage, eyeImage, transform, eyeSize);
-    cv::cvtColor(eyeImage, eyeGrey, CV_BGR2GRAY);
+    cv::warpAffine(originalImage, extractedColor, transform, eyeSize);
+    cv::cvtColor(extractedColor, extractedGrey, CV_BGR2GRAY);
 
 	// Apply blurring and normalization
-	//Utils::normalizeGrayScaleImage(eyeGrey.get(), 127, 50);	// TODO ONUR UNCOMMENT
-	eyeGrey.convertTo(eyeFloat, CV_32FC1);
-    //cv::GaussianBlur(eyeFloat, eyeFloat, cv::Size(3,3), 0);
-	cv::equalizeHist(eyeGrey, eyeGrey);
-}
-/*
-void EyeExtractor::extractEye(const cv::Mat originalImage) {
-    double x0 = 0;
-    double y0 = 0;
-    double x1 = 0;
-    double y1 = 0;
-
-    if(_facePoseEstimator->isActive()) {
-        x0 = _facePoseEstimator->rightEye.x; //_facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
-        y0 = _facePoseEstimator->rightEye.y; //_facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
-        x1 = _facePoseEstimator->leftEye.x; //_facePoseEstimator->facialLandmarks[LEFT_EYE].x;
-        y1 = _facePoseEstimator->leftEye.y; //_facePoseEstimator->facialLandmarks[LEFT_EYE].y;
-    }
-    else {
-        x0 = _pointTracker->currentPoints[PointTracker::eyePoint1].x;
-        y0 = _pointTracker->currentPoints[PointTracker::eyePoint1].y;
-        x1 = _pointTracker->currentPoints[PointTracker::eyePoint2].x;
-        y1 = _pointTracker->currentPoints[PointTracker::eyePoint2].y;
-    }
-
-	// Move the tracked points a little towards center (using weighted sum)
-	// so that the extracted image contains more the important area (iris & sclera)
-	static double alpha = Application::getComponent("GazeTrackerHistogramFeatures") ? 1.0 : 0.95;
-
-	double temp_x0 = alpha*x0 + (1-alpha)*x1;
-	double temp_y0 = alpha*y0 + (1-alpha)*y1;
-
-	x1 = (1-alpha)*x0 + alpha*x1;
-	y1 = (1-alpha)*y0 + alpha*y1;
-
-	x0 = temp_x0;
-	y0 = temp_y0;
-
-
-	double dx = abs(x1 - x0);	// Horizontal distance between eye corners in image
-	double dy = 0.17 * dx;		// %20 percent of horizontal distance (used as height of extracted eyes) // TODO THIS WAS 0.19
-
-	// Calculate the roll angle of the head (using eye corner positions)
-	double rollAngle = atan((y1-y0)/(x1 - x0));
-
-	cv::Point2f originalImagePoints[3];
-	cv::Point2f extractedImagePoints[3];
-
-	// Top left pixel
-	originalImagePoints[0].x = x0 + sin(rollAngle)*dy/2;
-	originalImagePoints[0].y = y0 - cos(rollAngle)*dy/2;
-
-	extractedImagePoints[0].x = 0;
-	extractedImagePoints[0].y = 0;
-
-	// Bottom left pixel
-	originalImagePoints[1].x = x0 - sin(rollAngle)*dy/2;
-	originalImagePoints[1].y = y0 + cos(rollAngle)*dy/2;
-
-	extractedImagePoints[1].x = 0;
-	extractedImagePoints[1].y = eyeSize.height-1;
-
-	// Top right pixel
-	originalImagePoints[2].x = originalImagePoints[0].x + cos(rollAngle)*dy*2;
-	originalImagePoints[2].y = originalImagePoints[0].y + sin(rollAngle)*dy*2;
-
-	extractedImagePoints[2].x = eyeSize.width-1;
-	extractedImagePoints[2].y = 0;
-
-	// Calculate the transformation matrix between two sets of points, and use it to extract eye image
-	cv::Mat transform = cv::getAffineTransform(originalImagePoints, extractedImagePoints);
-    cv::warpAffine(originalImage, eyeImage, transform, eyeSize);
-    cv::cvtColor(eyeImage, eyeGrey, CV_BGR2GRAY);
-
-	// Apply blurring and normalization
-	//Utils::normalizeGrayScaleImage(eyeGrey.get(), 127, 50);	// TODO ONUR UNCOMMENT
-	eyeGrey.convertTo(eyeFloat, CV_32FC1);
-    //cv::GaussianBlur(eyeFloat, eyeFloat, cv::Size(3,3), 0);
-	cv::equalizeHist(eyeGrey, eyeGrey);
+	//Utils::normalizeGrayScaleImage(extractedGrey.get(), 127, 50);	// TODO ONUR UNCOMMENT
+	extractedGrey.convertTo(extractedFloat, CV_32FC1);
+    //cv::GaussianBlur(extractedFloat, extractedFloat, cv::Size(3,3), 0);
+	cv::equalizeHist(extractedGrey, extractedGrey);
 }
 
-void EyeExtractor::extractEyeLeft(const cv::Mat originalImage) {
-    double x0 = 0;
-    double y0 = 0;
-    double x1 = 0;
-    double y1 = 0;
-
-    if(_facePoseEstimator->isActive()) {
-        x0 = _facePoseEstimator->leftEye.x; //_facePoseEstimator->facialLandmarks[LEFT_EYE].x;
-        y0 = _facePoseEstimator->leftEye.y; //_facePoseEstimator->facialLandmarks[LEFT_EYE].y;
-        x1 = _facePoseEstimator->rightEye.x; //_facePoseEstimator->facialLandmarks[RIGHT_EYE].x;
-        y1 = _facePoseEstimator->rightEye.y; //_facePoseEstimator->facialLandmarks[RIGHT_EYE].y;
-    }
-    else {
-        x0 = _pointTracker->currentPoints[PointTracker::eyePoint2].x;
-        y0 = _pointTracker->currentPoints[PointTracker::eyePoint2].y;
-        x1 = _pointTracker->currentPoints[PointTracker::eyePoint1].x;
-        y1 = _pointTracker->currentPoints[PointTracker::eyePoint1].y;
-    }
-
-	// Move the tracked points a little towards center (using weighted sum)
-	// so that the extracted image contains more the important area (iris & sclera)
-	static double alpha = Application::getComponent("GazeTrackerHistogramFeatures") ? 1.0 : 0.95;
-
-	double temp_x0 = alpha*x0 + (1-alpha)*x1;
-	double temp_y0 = alpha*y0 + (1-alpha)*y1;
-
-	x1 = (1-alpha)*x0 + alpha*x1;
-	y1 = (1-alpha)*y0 + alpha*y1;
-
-	x0 = temp_x0;
-	y0 = temp_y0;
-
-
-	double dx = abs(x1 - x0);	// Horizontal distance between eye corners in image
-	double dy = 0.17 * dx;		// %20 percent of horizontal distance (used as height of extracted eyes)
-
-	// Calculate the roll angle of the head (using eye corner positions)
-	double rollAngle = atan((y1-y0)/(x1 - x0));
-
-	cv::Point2f originalImagePoints[3];
-	cv::Point2f extractedImagePoints[3];
-
-	// Top right pixel
-	originalImagePoints[0].x = x0 + sin(rollAngle)*dy/2;
-	originalImagePoints[0].y = y0 - cos(rollAngle)*dy/2;
-
-	extractedImagePoints[0].x = eyeSize.width-1;
-	extractedImagePoints[0].y = 0;
-
-	// Bottom right pixel
-	originalImagePoints[1].x = x0 - sin(rollAngle)*dy/2;
-	originalImagePoints[1].y = y0 + cos(rollAngle)*dy/2;
-
-	extractedImagePoints[1].x = eyeSize.width-1;
-	extractedImagePoints[1].y = eyeSize.height-1;
-
-	// Top left pixel
-	originalImagePoints[2].x = originalImagePoints[0].x - cos(rollAngle)*dy*2;
-	originalImagePoints[2].y = originalImagePoints[0].y - sin(rollAngle)*dy*2;
-
-	extractedImagePoints[2].x = 0;
-	extractedImagePoints[2].y = 0;
-
-	// Calculate the transformation matrix between two sets of points, and use it to extract eye image
-	cv::Mat transform = cv::getAffineTransform(originalImagePoints, extractedImagePoints);
-    cv::warpAffine(originalImage, eyeImageLeft, transform, eyeSize);
-    cv::cvtColor(eyeImageLeft, eyeGreyLeft, CV_BGR2GRAY);
-
-	// Apply blurring and normalization
-	//Utils::normalizeGrayScaleImage(eyeGreyLeft.get(), 127, 50);	// TODO ONUR UNCOMMENT
-	eyeGreyLeft.convertTo(eyeFloatLeft, CV_32FC1);
-    //cv::GaussianBlur(eyeFloatLeft, eyeFloatLeft, cv::Size(3,3), 0);
-	cv::equalizeHist(eyeGreyLeft, eyeGreyLeft);
-}
-*/
 void EyeExtractor::draw() {
     if (!Application::Data::isTrackingSuccessful)
 		return;
@@ -324,11 +174,9 @@ void EyeExtractor::draw() {
 	int baseX = 0;
     int baseY = 0;
 
+	// Draw the extacted eye images on top left of debug screen
     cv::cvtColor(eyeGrey, image(cv::Rect(baseX, baseY, eyeDX, eyeDY)), CV_GRAY2BGR);
-    //cv::cvtColor(*eyeGrey.get(), image(cv::Rect(baseX + stepX * 1, baseY + stepY * 1, eyeDX, eyeDY)), CV_GRAY2BGR);
-
     cv::cvtColor(eyeGreyLeft, image(cv::Rect(baseX + 140, baseY, eyeDX, eyeDY)), CV_GRAY2BGR);
-    //cv::cvtColor(*eyeGreyLeft.get(), image(cv::Rect(baseX + 100, baseY + stepY * 1, eyeDX, eyeDY)), CV_GRAY2BGR);
 }
 
 // Prepares the eye extractor for calibration

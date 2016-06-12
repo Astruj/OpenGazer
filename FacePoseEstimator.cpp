@@ -365,8 +365,9 @@ void FacePoseEstimator::draw() {
     
     
     // TODO Change fixed values
-    int monitorCenterX = 960;
-    int monitorCenterY = 540;
+    cv::Rect* geometry = Utils::getSecondMonitorGeometry();
+    int monitorCenterX = geometry->width/2;
+    int monitorCenterY = geometry->height/2;
     
     // Correct for pitch and yaw of head pose change 
     Application::Data::headPoseCorrection.x = tan(rotationAngles[0])*_tvec.at<double>(2)/PIXEL_WIDTH;
@@ -389,12 +390,13 @@ void FacePoseEstimator::draw() {
         Utils::mapFromSecondMonitorToDebugFrameCoordinates(cv::Point(monitorCenterX + Application::Data::headPoseCorrection.x, monitorCenterY + Application::Data::headPoseCorrection.y)),
         4, cv::Scalar(255, 0, 0), -1, 4, 0);
         
-        
+        /*
     // Draw the projected eye region corner points
     for (int i=0; i<eyeRectangleCorners.size(); i++) {
         cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(eyeRectangleCorners[i]), 2, cv::Scalar(0,255,255), 2);
         cv::circle(image, Utils::mapFromCameraToDebugFrameCoordinates(eyeRectangleCornersLeft[i]), 2, cv::Scalar(0,255,255), 2);
     }
+    */
 }
 
 // Return the used head model (either the generic one or the personalized one)
@@ -501,8 +503,6 @@ void FacePoseEstimator::calculateEyeRectangleCorners() {
     double eyeHeight = eyeSeparation*0.17;
     double eyeWidth = 2*eyeHeight;
     double eyeHalfHeight = eyeHeight*0.5;
-    
-    std::cout << "Eye dimensions: " << eyeHeight << ", " << eyeWidth << std::endl;
     
     cv::Point3f rightEyeCorner = _headModel[INDEX_RIGHT_EYE];
     cv::Point3f leftEyeCorner = _headModel[INDEX_LEFT_EYE];
