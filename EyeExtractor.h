@@ -36,8 +36,8 @@ private:
 	BlinkDetector _blinkDetectorLeft;
 	bool _isBlinking;
 	bool _fromGroundTruth;
-    PointTracker *_pointTracker = NULL;
-    FacePoseEstimator *_facePoseEstimator = NULL;
+    PointTracker *_pointTracker;
+    FacePoseEstimator *_facePoseEstimator;
 
 	void extractEyes(const cv::Mat originalImage);
 	void extractRegion(const cv::Mat originalImage, cv::Point2f imageCoords[3], cv::Point2f extractedCoords[3],

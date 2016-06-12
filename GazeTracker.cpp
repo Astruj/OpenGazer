@@ -15,6 +15,9 @@ GazeTracker::GazeTracker()
 {
 	gazePoint.x = 0;
 	gazePoint.y = 0;
+	
+	_eyeExtractor = NULL;
+	_pointTracker = NULL;
 }
 
 bool GazeTracker::isActive() {
