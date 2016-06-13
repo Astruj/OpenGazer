@@ -104,6 +104,11 @@ void FacePoseEstimator::process() {
     dlib::assign_image(_reducedSizeVideoFrame, dlib::cv_image<dlib::bgr_pixel>(Application::Components::videoInput->reducedSizeFrame));
     dlib::assign_image(_videoFrame, dlib::cv_image<dlib::bgr_pixel>(Application::Components::videoInput->frame));
     
+    // If calibration is started, cancel learning
+    if(Application::status == Application::STATUS_CALIBRATING) {
+        Application::Settings::faceStructureLearning = false;
+    }
+    
     isFaceFound = detectFace();
 
     if(isFaceFound) {
@@ -122,30 +127,32 @@ void FacePoseEstimator::process() {
 
         Application::Data::isTrackingSuccessful = true;
         estimateFacePose();
-
-        // If there was a mouse click on the debug window,
-        // or if the current head pose is different enough (compared to previously added samples),
-        // Add another sample for the calculation of the face structure
-        if(Application::Signals::addFaceSample || shouldAddFaceSample()) {
-            addFaceSample();
-            Application::Signals::addFaceSample = false;
-        }
         
-        // If there were enough samples, do 5 iterations of coordinate descent 
-        if(_sampleCount > 4) {
-            HiResTimer timer;
+        if(Application::Settings::faceStructureLearning) {
+            // If there was a mouse click on the debug window,
+            // or if the current head pose is different enough (compared to previously added samples),
+            // Add another sample for the calculation of the face structure
+            if(Application::Signals::addFaceSample || shouldAddFaceSample()) {
+                addFaceSample();
+                Application::Signals::addFaceSample = false;
+            }
             
-            timer.start();
-            for(int iteration=0; iteration<5; iteration++)
-                coordinateDescentIteration();
-            timer.stop();
-            
-            // Save the updated personal parameters
-            saveParameters();
-            
-            // Calculate the corner points defining the eye region rectangles
-            calculateEyeRectangleCorners();
+            // If there were enough samples, do 5 iterations of coordinate descent 
+            if(_sampleCount > 4) {
+                HiResTimer timer;
+                
+                timer.start();
+                for(int iteration=0; iteration<5; iteration++)
+                    coordinateDescentIteration();
+                timer.stop();
+                
+                // Save the updated personal parameters
+                saveParameters();
+            }
         }
+          
+        // Calculate the corner points defining the eye region rectangles
+        calculateEyeRectangleCorners();
         
         // Update the estimations for left and right eye corners
         std::vector<cv::Point2f> eyeCornerProjections;
@@ -619,6 +626,9 @@ void FacePoseEstimator::loadParameters() {
             
             // Deserialize the _parameters vector
             iArchive & _parameters;
+            
+            // Do not learn any more when parameters are loaded
+            Application::Settings::faceStructureLearning = false;
         }
     }
 }

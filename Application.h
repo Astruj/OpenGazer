@@ -38,6 +38,7 @@ namespace Application {
 		extern bool recording;
 		extern bool noWindows;
 		extern bool noTracking;
+        extern bool faceStructureLearning;
 		extern bool useGroundTruth;
 		extern std::string subject;
 	}

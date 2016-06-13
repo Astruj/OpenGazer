@@ -15,6 +15,7 @@ namespace Application {
 		bool recording = false;
 		bool noWindows = false;
 		bool noTracking = false;
+        bool faceStructureLearning = true;
 		bool useGroundTruth = false;
 		std::string subject;
 	}
