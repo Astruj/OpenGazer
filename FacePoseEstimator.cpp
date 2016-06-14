@@ -103,6 +103,7 @@ void FacePoseEstimator::process() {
     // Create a wrapper dlib structure around the camera framepredictor
     dlib::assign_image(_reducedSizeVideoFrame, dlib::cv_image<dlib::bgr_pixel>(Application::Components::videoInput->reducedSizeFrame));
     dlib::assign_image(_videoFrame, dlib::cv_image<dlib::bgr_pixel>(Application::Components::videoInput->frame));
+    //dlib::pyramid_up(_reducedSizeVideoFrame);
     
     // If calibration is started, cancel learning
     if(Application::status == Application::STATUS_CALIBRATING) {
@@ -201,7 +202,7 @@ bool FacePoseEstimator::detectFace() {
     static HiResTimer timer;
     
     // Detect the faces in the image
-    std::vector<dlib::rectangle> faceDetections = _faceDetector(_reducedSizeVideoFrame);
+    std::vector<dlib::rectangle> faceDetections = _faceDetector(_reducedSizeVideoFrame); //_faceDetector(_videoFrame);
     
     if(faceDetections.size() == 0) {
         return false;
@@ -209,7 +210,7 @@ bool FacePoseEstimator::detectFace() {
     
     // Save the first detection as the face rectangle (multiply coords. by 2 because of scaled image)
     dlib::rectangle detection = faceDetections[0];
-    faceRectangle = cv::Rect(detection.left()*2, detection.top()*2, detection.width()*2, detection.height()*2);
+    faceRectangle = cv::Rect(detection.left()*2, detection.top()*2, detection.width()*2, detection.height()*2); //cv::Rect(detection.left(), detection.top(), detection.width(), detection.height());
     
     return true;
 }
@@ -357,18 +358,21 @@ void FacePoseEstimator::draw() {
                 Utils::mapFromCameraToDebugFrameCoordinates(facialLandmarks[SELLION]), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255),2, 8);
 
     if(Application::Signals::useGenericFaceModel) {
-        cv::putText(image, "GENERIC MODEL", cv::Point(100, 500), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255),2, 8);
+        cv::putText(image, "GENERIC MODEL", cv::Point(100, 450), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255),2, 8);
     }
     else {
-        cv::putText(image, "CUSTOMIZED MODEL", cv::Point(100, 500), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
+        cv::putText(image, "CUSTOMIZED MODEL", cv::Point(100, 450), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
     }
     
+    // Write the number of samples collected so far on the debug frame
+    cv::putText(image, "# SAMPLES: " + boost::lexical_cast<std::string>(_sampleHeadPoseAngles.size()), cv::Point(100, 500), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
+        
     cv::Vec3d rotationAngles = getEulerAngles(_rvec);
     
     cv::putText(image, "ROTATIONS: ("  + boost::lexical_cast<std::string>(int((180/M_PI)*rotationAngles[0])) + ", " 
                             + boost::lexical_cast<std::string>(int((180/M_PI)*rotationAngles[1])) + ", " 
                             + boost::lexical_cast<std::string>(int((180/M_PI)*rotationAngles[2])) + ")",
-            cv::Point(100, 800), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
+            cv::Point(100, 550), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
     
     
     // TODO Change fixed values
@@ -384,9 +388,14 @@ void FacePoseEstimator::draw() {
     Application::Data::headPoseCorrection.x += _tvec.at<double>(0)/PIXEL_WIDTH;
     Application::Data::headPoseCorrection.y += _tvec.at<double>(1)/PIXEL_WIDTH;
     
+    // TODO CHECK
+    // Disable the correction in Y axis (seems it's doing a worse job)
+    Application::Data::headPoseCorrection.y = 0;
     
     // Draw the corrected estimation on the debug window (WHITE)
 	cv::Point correctedEstimation = Application::Data::gazePoints[0] + Application::Data::headPoseCorrection;
+    
+	Utils::boundToScreenArea(correctedEstimation);
     
     cv::circle(image,
         Utils::mapFromSecondMonitorToDebugFrameCoordinates(correctedEstimation),

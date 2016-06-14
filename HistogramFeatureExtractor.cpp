@@ -7,9 +7,10 @@
 HistogramFeatureExtractor::HistogramFeatureExtractor() {
 	_ellipseMask = cv::imread("./images/elipse.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     
-    int sizeImageDisk = 30;	// TODO ONUR Check disk size 5? 10? lastly 30?
+    int minDiskSize = 26;	// TODO ONUR Check disk size 5? 10? lastly 30?
 	for (int j=0; j<VECTOR_SIZE; j++){
-		createTemplates(j, sizeImageDisk+j*2);
+		std::cout << "Creating disk with size: " << minDiskSize+j*2 << std::endl; 
+		createTemplateWithSize(j, minDiskSize+j*2);
 
 		_gaussian2D[j].create(cv::Size(EyeExtractor::eyeSize.width - _irisTemplateDisk[j].size().width + 1, EyeExtractor::eyeSize.height - _irisTemplateDisk[j].size().height + 1), CV_32FC1);
 		_matches[j].create(_gaussian2D[j].size(), CV_32FC1);
@@ -29,6 +30,7 @@ HistogramFeatureExtractor::HistogramFeatureExtractor() {
 
 	_groundTruth = new EyeExtractor(true);
 	_eyeExtractor = NULL;
+	_eyeCenterDetector = NULL;
 }
 
 HistogramFeatureExtractor::~HistogramFeatureExtractor() {
@@ -37,6 +39,10 @@ HistogramFeatureExtractor::~HistogramFeatureExtractor() {
 void HistogramFeatureExtractor::process() {
     if(_eyeExtractor == NULL) {
         _eyeExtractor = (EyeExtractor*) Application::getComponent("EyeExtractor");
+    }
+	
+    if(_eyeCenterDetector == NULL) {
+        _eyeCenterDetector = (EyeCenterDetector*) Application::getComponent("EyeCenterDetector");
     }
     
 	if (Application::Data::isTrackingSuccessful) {
@@ -67,6 +73,13 @@ void HistogramFeatureExtractor::extractFeatures(){
 		cv::Mat *eyeSegmentation			= (side == 0) ? &this->eyeSegmentation		: &this->eyeSegmentationLeft;
 
 		cv::Mat *gtImage					= (side == 0) ? &_groundTruth->eyeImage: &_groundTruth->eyeImageLeft;
+		
+		cv::Point *eyeCenter = NULL;
+		
+		// If EyeCenterDetector is present, get the reference of the iris center
+		if(_eyeCenterDetector) {
+			eyeCenter = (side == 0) ? &_eyeCenterDetector->eyeCenter: &_eyeCenterDetector->eyeCenterLeft;
+		}
 
 		// Copy the masked region to the temporary image and fill the rest with grey
         maskedGreyImage.setTo(cv::Scalar(100,100,100));
@@ -87,17 +100,39 @@ void HistogramFeatureExtractor::extractFeatures(){
 		}
 
 		// Find the disk size with the best likelihood
-		double maxProbability = (double) maxVal[0];
+		double maxProbability = -10000; //(double) maxVal[0];
 		int bestDiskSize = 0;
+		bool hasAnyValidCandidate = false;
 
-		for (j=1; j<VECTOR_SIZE; j++){
+		for (j=0; j<VECTOR_SIZE; j++){
 			// Calculate the likelihood for the best match for this disk size
 			double tmp = (double) maxVal[j] * (1+j*j/300.0);	// Prioritize larger disk sizes
 
 			if (tmp > maxProbability){
-				maxProbability = tmp;
-				bestDiskSize = j;
+				bool validCandidate = true;
+				
+				// If EyeCenterDetector is present, make sure the detected center lies in this iris bounding box candidate
+				if(eyeCenter != NULL) {
+					if(eyeCenter->x < maxLoc[bestDiskSize].x || eyeCenter->x > maxLoc[bestDiskSize].x + _irisTemplateDisk[bestDiskSize].size().width
+						|| eyeCenter->y < maxLoc[bestDiskSize].y || eyeCenter->y > maxLoc[bestDiskSize].y + _irisTemplateDisk[bestDiskSize].size().height) {
+						validCandidate = false;
+					}
+				}
+				
+				// TODO REMVOE 
+				validCandidate = true;
+				
+				if(validCandidate) {
+					maxProbability = tmp;
+					bestDiskSize = j;
+					hasAnyValidCandidate = true;
+				}
 			}
+		}
+		
+		if(!hasAnyValidCandidate) {
+			std::cout << "No valid candidates" << std::endl;
+			//continue;
 		}
 
 		// Apply segmentation on the whole eye image
@@ -152,7 +187,7 @@ void HistogramFeatureExtractor::calculateHistogram(	cv::Mat bwIris,
 }
 
 // Initialization
-void HistogramFeatureExtractor::createTemplates(int index, int sizeDisk) {
+void HistogramFeatureExtractor::createTemplateWithSize(int index, int sizeDisk) {
 	_irisTemplateDisk[index].create(cv::Size(sizeDisk, sizeDisk), CV_8UC1);
 
 	cv::Point center;

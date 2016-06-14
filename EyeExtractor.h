@@ -11,12 +11,13 @@ public:
 	static const int eyeDX;
 	static const int eyeDY;
 	static const cv::Size eyeSize;
+	static const cv::Size eyeReducedSize;
 
 	boost::scoped_ptr<FeatureDetector> averageEye;
 	boost::scoped_ptr<FeatureDetector> averageEyeLeft;
 
-	cv::Mat eyeGrey, eyeFloat, eyeImage;
-	cv::Mat eyeGreyLeft, eyeFloatLeft, eyeImageLeft;
+	cv::Mat eyeGrey, eyeGreyReduced, eyeFloat, eyeImage;
+	cv::Mat eyeGreyLeft, eyeGreyReducedLeft, eyeFloatLeft, eyeImageLeft;
 
 	EyeExtractor(bool fromGroundTruth=false);
 	~EyeExtractor();
@@ -41,7 +42,7 @@ private:
 
 	void extractEyes(const cv::Mat originalImage);
 	void extractRegion(const cv::Mat originalImage, cv::Point2f imageCoords[3], cv::Point2f extractedCoords[3],
-						cv::Mat &extractedColor, cv::Mat &extractedGrey, cv::Mat &extractedFloat);
+						cv::Mat &extractedColor, cv::Mat &extractedGrey, cv::Mat &extractedGreyReduced, cv::Mat &extractedFloat);
 	//void extractEye(const cv::Mat originalImage);
 	//void extractEyeLeft(const cv::Mat originalImage);
 };

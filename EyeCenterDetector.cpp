@@ -25,8 +25,14 @@ void EyeCenterDetector::process() {
     if (!Application::Data::isTrackingSuccessful)
         return;
 
-    this->eyeCenter = findEyeCenter(_eyeExtractor->eyeGrey);
-    this->eyeCenterLeft = findEyeCenter(_eyeExtractor->eyeGreyLeft);
+    this->eyeCenter = findEyeCenter(_eyeExtractor->eyeGreyReduced);
+    this->eyeCenterLeft = findEyeCenter(_eyeExtractor->eyeGreyReducedLeft);
+    
+    // Multiply coords by 2 as we use the reduced size eye images
+    this->eyeCenter.x *= 2;
+    this->eyeCenter.y *= 2;
+    this->eyeCenterLeft.x *= 2;
+    this->eyeCenterLeft.y *= 2;
 }
 
 void EyeCenterDetector::draw() {

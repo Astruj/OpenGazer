@@ -118,7 +118,7 @@ void GazeTracker::updateEstimations() {
 		gazePoint.y = (_gaussianProcessY->getmean(Utils::SharedImage(image, &ignore)) + _gaussianProcessYLeft->getmean(Utils::SharedImage(leftImage, &ignore))) / 2;
 
 		// Make sure estimation stays in the screen area
-		Utils::boundToScreenArea(gazePoint);
+		//Utils::boundToScreenArea(gazePoint);
 	}
 }
 

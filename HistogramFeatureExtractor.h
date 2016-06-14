@@ -1,6 +1,7 @@
 #pragma once
 #include "utils.h"
 #include "EyeExtractor.h"
+#include "EyeCenterDetector.h"
 #include "Component.h"
 
 #define HORIZONTAL_BIN_SIZE 128
@@ -8,7 +9,7 @@
 
 #define GRAY_LEVEL 127
 
-#define VECTOR_SIZE 10
+#define VECTOR_SIZE 20
 
 class HistogramFeatureExtractor: public Component {
 	cv::Mat _matches[VECTOR_SIZE];
@@ -20,6 +21,7 @@ class HistogramFeatureExtractor: public Component {
 
 	EyeExtractor *_groundTruth;
     EyeExtractor *_eyeExtractor;
+	EyeCenterDetector *_eyeCenterDetector;
 
 public:
 	cv::Mat horizontalFeatures, verticalFeatures, horizontalFeaturesLeft, verticalFeaturesLeft;
@@ -37,6 +39,6 @@ public:
 	void calculateHistogram(cv::Mat, cv::Mat, cv::Mat);
 
 	// Initialization functions
-	void createTemplates(int, int);
+	void createTemplateWithSize(int, int);
 	void createGaussians(int);
 };

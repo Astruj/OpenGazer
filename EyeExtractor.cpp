@@ -10,16 +10,19 @@
 const int EyeExtractor::eyeDX = 64;
 const int EyeExtractor::eyeDY = 32;
 const cv::Size EyeExtractor::eyeSize = cv::Size(eyeDX * 2, eyeDY * 2);
+const cv::Size EyeExtractor::eyeReducedSize = cv::Size(eyeDX, eyeDY);
 
 EyeExtractor::EyeExtractor(bool fromGroundTruth):
 	_pointTracker(NULL),
 	_facePoseEstimator(NULL),
 
 	eyeGrey(eyeSize, CV_8UC1),
+	eyeGreyReduced(eyeReducedSize, CV_8UC1),
 	eyeFloat(eyeSize, CV_32FC1),
 
  	// ONUR DUPLICATED CODE FOR LEFT EYE
 	eyeGreyLeft(eyeSize, CV_8UC1),
+	eyeGreyReducedLeft(eyeReducedSize, CV_8UC1),
 	eyeFloatLeft(eyeSize, CV_32FC1),
 
 	eyeImage(eyeSize, CV_8UC3),
@@ -144,15 +147,15 @@ void EyeExtractor::extractEyes(const cv::Mat originalImage) {
 	extractedCoords[3] = cv::Point2f(eyeSize.width-1, 0);
 	
 	// Extract both eyes
-	extractRegion(originalImage, imageCoords, extractedCoords, eyeImage, eyeGrey, eyeFloat);
-	extractRegion(originalImage, imageCoordsLeft, extractedCoords, eyeImageLeft, eyeGreyLeft, eyeFloatLeft);
+	extractRegion(originalImage, imageCoords, extractedCoords, eyeImage, eyeGrey, eyeGreyReduced, eyeFloat);
+	extractRegion(originalImage, imageCoordsLeft, extractedCoords, eyeImageLeft, eyeGreyLeft, eyeGreyReducedLeft, eyeFloatLeft);
 }
 
 // Calculates the affine transformation between the imageCoords and extractedCoords,
 // and uses this transformation to extract the eye regions from the given image
 // Saves the color, grey and float type representations of the extracted image in the passed parameters
 void EyeExtractor::extractRegion(const cv::Mat originalImage, cv::Point2f imageCoords[3], cv::Point2f extractedCoords[3],
-									cv::Mat &extractedColor, cv::Mat &extractedGrey, cv::Mat &extractedFloat) {
+									cv::Mat &extractedColor, cv::Mat &extractedGrey, cv::Mat &extractedGreyReduced, cv::Mat &extractedFloat) {
 	// 
 	// Calculate the transformation matrix between two sets of points, and use it to extract eye image
 	cv::Mat transform = cv::getAffineTransform(imageCoords, extractedCoords);
@@ -164,6 +167,8 @@ void EyeExtractor::extractRegion(const cv::Mat originalImage, cv::Point2f imageC
 	extractedGrey.convertTo(extractedFloat, CV_32FC1);
     //cv::GaussianBlur(extractedFloat, extractedFloat, cv::Size(3,3), 0);
 	cv::equalizeHist(extractedGrey, extractedGrey);
+	
+	cv::resize(extractedGrey, extractedGreyReduced, eyeReducedSize);
 }
 
 void EyeExtractor::draw() {

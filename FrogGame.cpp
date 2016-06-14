@@ -70,6 +70,11 @@ void FrogGame::process() {
 	
 	
 	cv::Point estimation = Application::Data::gazePoints[0] + Application::Data::headPoseCorrection;
+	
+	// Moved this check here
+	// Otherwise we were losing our extrapolation capability
+	Utils::boundToScreenArea(estimation);
+	
     cv::Point mappedEstimation;
 	
     Utils::mapToFirstMonitorCoordinates(estimation, mappedEstimation);
