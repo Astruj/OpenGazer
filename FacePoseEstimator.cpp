@@ -375,7 +375,6 @@ void FacePoseEstimator::draw() {
             cv::Point(100, 550), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,255,0),2, 8);
     
     
-    // TODO Change fixed values
     cv::Rect* geometry = Utils::getSecondMonitorGeometry();
     int monitorCenterX = geometry->width/2;
     int monitorCenterY = geometry->height/2;

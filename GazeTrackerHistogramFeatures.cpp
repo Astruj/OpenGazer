@@ -192,8 +192,6 @@ double GazeTrackerHistogramFeatures::covarianceFunctionSE(const cv::Mat &histogr
 
 // Save the personal calibration to a text file
 void GazeTrackerHistogramFeatures::saveParameters() {
-	return;
-/*
     // Make sure the folder for saving user parameters exists  
     boost::filesystem::create_directories(USER_PARAMETERS_FOLDER);
     std::string fileName = std::string(USER_PARAMETERS_FOLDER) + "/" + Application::Settings::subject + "_calibration.bin";
@@ -202,14 +200,13 @@ void GazeTrackerHistogramFeatures::saveParameters() {
     boost::archive::binary_oarchive oArchive(outputFile);
     
     // Serialize the calibration data
-    oArchive << Application::Data::calibrationTargets << _exemplars << _exemplarsLeft;
-	*/
+    oArchive & Application::Data::calibrationTargets;
+	oArchive & _exemplars;
+	oArchive & _exemplarsLeft;
 }
 
 // Load the personal calibration from the text file, if it exists
 void GazeTrackerHistogramFeatures::loadParameters() {
-	return;
-	/*
     // Check if the parameters file for this user exists
     std::string fileName = std::string(USER_PARAMETERS_FOLDER) + "/" + Application::Settings::subject + "_calibration.bin";
     
@@ -219,10 +216,16 @@ void GazeTrackerHistogramFeatures::loadParameters() {
             boost::archive::binary_iarchive iArchive(inputFile);
             
             // Deserialize the calibration data
-            iArchive >> Application::Data::calibrationTargets >> _exemplars >> _exemplarsLeft;
+			iArchive & Application::Data::calibrationTargets;
+			iArchive & _exemplars;
+			iArchive & _exemplarsLeft;
         }
+		
+		trainGaussianProcesses();
+		Application::status = Application::STATUS_CALIBRATED;
+		
+		std::cout << "Calibration loaded!!!" << std::endl;
     }
-	*/
 }
 
 /*

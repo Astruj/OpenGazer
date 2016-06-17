@@ -11,23 +11,6 @@
 using Utils::operator<<;
 using Utils::operator>>;
 
-/* TODO REMOVE THESE TWO FUNCTIONS */
-static cv::Point pointBetweenRects(const cv::Point &point, cv::Rect source, cv::Rect dest) {
-	return cv::Point((point.x - source.x) * (double(dest.width) / source.width) + dest.x,
-		(point.y - source.y) * (double(dest.height) / source.height) + dest.y);
-}
-
-static std::vector<cv::Point> pointBetweenRects(const std::vector<cv::Point> &points, cv::Rect source, cv::Rect dest) {
-	std::vector<cv::Point> result;
-	result.reserve(points.size());
-
-	xForEach(iter, points) {
-		result.push_back(pointBetweenRects(*iter, source, dest));
-	}
-
-	return result;
-}
-
 PointTracker::PointTracker():
 	_flags(CV_LKFLOW_INITIAL_GUESSES),
 	grey(Application::Components::videoInput->size, 1),
