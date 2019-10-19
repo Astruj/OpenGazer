@@ -22,6 +22,8 @@
 #include "TestWindow.h"
 
 #include "HiResTimer.h"
+int ii = 0;
+#define db std:: cout << "Debugging" << ii << std::endl;
 
 MainGazeTracker::MainGazeTracker(int argc, char **argv):
 	_stores(Application::getStores()),
@@ -178,6 +180,8 @@ MainGazeTracker::MainGazeTracker(int argc, char **argv):
 			Application::Components::video.reset(new VideoWriter(Application::Components::videoInput->debugFrame.size(), _basePath.substr(0, _basePath.length() - 4) + ".avi"));
 		}
 		else {
+			ii++;
+			db
 			Application::Components::video.reset(new VideoWriter(Application::Components::videoInput->size, _basePath.substr(0, _basePath.length() - 4) + ".avi"));
 		}
 

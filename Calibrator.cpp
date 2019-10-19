@@ -7,7 +7,7 @@ Calibrator::Calibrator(const std::vector<Point> &points) :
 	_points = points;
     
     // Clear gaze tracker components' calibration info
-    for (int i=0; i<Application::config.gaze_components.size(); i++){
+    for (unsigned int i=0; i<Application::config.gaze_components.size(); i++){
         GazeTrackerComponent* comp = (GazeTrackerComponent*) Application::getComponent(Application::config.gaze_components[i]);
         comp->clear();
     }
@@ -90,7 +90,7 @@ void Calibrator::pointStart() {
 	if (screenBounds.height + screenBounds.y > _screenImage.size().height) {
 		screenBounds.height = _screenImage.size().height - screenBounds.y;
 	}
-	
+
 	// Fill the screen image with solid color and copy the target image
 	_screenImage.setTo(cv::Scalar(153, 75, 75));
 	_targetImage(targetBounds).copyTo(_screenImage(screenBounds));
@@ -100,6 +100,7 @@ void Calibrator::pointStart() {
 void Calibrator::pointEnd() {
 	Application::Data::calibrationTargets.push_back(getActivePoint());
 	needRecalibration = true;
+	std::cout<<"Calibration ended"<<std::endl;
 }
 
 // Aborts calibration
@@ -143,21 +144,25 @@ int Calibrator::getPointFrameNo() {
 
 // 
 bool Calibrator::isLastFrame() {
+	// if(getPointNumber() == 0){
+	// 	return (getPointFrameNo() == (Application::dwelltimeParameter-1)+100 );
+	// }
 	return getPointFrameNo() == (Application::dwelltimeParameter-1);
 }
 
 // Checks if current point is the last
 bool Calibrator::isLastPoint() {
-	return getPointNumber() == (_points.size() - 1);
+	return (unsigned int)getPointNumber() == (_points.size() - 1);
 }
 
 // Checks if calibration is finished
 bool Calibrator::isFinished() {
-	return getPointNumber() >= _points.size();
+	return (unsigned int)getPointNumber() >= _points.size();
 }
 
 // Decides whether calibrator should switch to next point (display it on screen)
 bool Calibrator::shouldStartNextPoint() {
+
 	return (getPointFrameNo() == 0) && !isFinished();
 }
 

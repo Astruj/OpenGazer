@@ -1,0 +1,22 @@
+2019-10-11 17:05:08,304 DEBUG Loaded backend qt5agg version unknown.
+2019-10-11 17:05:08,304 DEBUG Loaded backend Qt5Agg version unknown.
+2019-10-11 17:05:12,897 INFO Using Ubuntu 18.04 or higher
+text
+Recording!
+Recording!
+Inside stop recording.......................................................
+1
+Length:0
+Gaze bounding boxes captured
+Start summary creation...
+2019-10-11 17:06:11,108 DEBUG STREAM b'IHDR' 16 13
+2019-10-11 17:06:11,108 DEBUG STREAM b'IDAT' 41 16373
+2019-10-11 17:06:11,339 DEBUG STREAM b'IHDR' 16 13
+2019-10-11 17:06:11,339 DEBUG STREAM b'IDAT' 41 65536
+Data extracted...
+2019-10-11 17:06:12,515 INFO Request URL: https://en.wikipedia.org/w/api.php?action=query&prop=extracts&titles=Natya Shastra &explaintext=1&exsectionformat=wiki
+2019-10-11 17:06:12,517 DEBUG Starting new HTTPS connection (1): en.wikipedia.org:443
+2019-10-11 17:06:13,587 DEBUG https://en.wikipedia.org:443 "GET /w/api.php?action=query&prop=extracts&titles=Natya+Shastra+&explaintext=1&exsectionformat=wiki&format=json&redirects=1 HTTP/1.1" 200 None
+Data API collected...
+Summary saved at File_out/summary.txt
+Reading summary

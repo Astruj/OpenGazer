@@ -39,9 +39,21 @@ void ImageWindow::showImage(cv::Mat image) {
 
 // Override the QMainWindow show function so that we can decide whether we want
 // to hide all the windows (for experiment reruns) or not
+// void ImageWindow::show() {
+// 	if(Application::Settings::noWindows)
+// 		return;
+
+// 	QMainWindow::show();
+// }
+
+// Override the QMainWindow show function so that we can decide whether we want
+// to hide all the windows (for experiment reruns) or not
 void ImageWindow::show() {
 	if(Application::Settings::noWindows)
 		return;
+	if(Application::isTrackerCalibrated){
+        	QMainWindow::showMinimized();
+	}  
 
 	QMainWindow::show();
 }

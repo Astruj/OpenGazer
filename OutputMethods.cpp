@@ -1,9 +1,11 @@
 #include <arpa/inet.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-
+#include<iomanip>
 #include "OutputMethods.h"
 #include "Application.h"
+
+using namespace std;
 
 AbstractStore::~AbstractStore() {}
 
@@ -58,6 +60,17 @@ void SocketStore::store() {
 	std::ostringstream stream;
 	stream  << "x " << (int) Application::Data::gazePoints[0].x << std::endl 
 			<< "y " << (int) Application::Data::gazePoints[0].y << std::endl;
+	
+	std::cout << (int)Application::Data::gazePoints[0].x << "," ;
+	std::cout << (int)Application::Data::gazePoints[0].y << "," ;
+	time_t now = time(0);
+    tm *ltm = localtime(&now);  
+    // std :: cout << ltm->tm_hour << ":" << ltm->tm_min << ":" << ltm->tm_sec<< std::endl; 
+    std :: cout << setfill('0') << setw(2) << ltm->tm_hour;
+    std :: cout << ":";
+    std :: cout << setfill('0') << setw(2) << ltm->tm_min;
+    std :: cout <<":";
+    std :: cout << setfill('0') << setw(2) << ltm->tm_sec << std::endl; 
 	std::string str = stream.str();
 	sendto(_mySocket, str.c_str(), str.size(), 0, (sockaddr *)&_destAddr, sizeof(_destAddr));
 }
